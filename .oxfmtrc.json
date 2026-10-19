@@ -1,0 +1,45 @@
+{
+    "$schema": "./node_modules/oxfmt/configuration_schema.json",
+    "endOfLine": "lf",
+    "useTabs": false,
+    "tabWidth": 2,
+    "printWidth": 100,
+    "insertFinalNewline": true,
+    "singleQuote": true,
+    "semi": false,
+    "bracketSpacing": true,
+    "trailingComma": "none",
+    "astro": true,
+    "overrides": [
+        {
+            "files": ["*.json", "*.jsonc"],
+            "options": { "tabWidth": 4 }
+        }
+    ],
+    "sortImports": {
+        "order": "asc",
+        "groups": [["builtin", "external"], ["internal"], ["parent", "sibling", "index"]],
+        "internalPattern": ["#/"],
+        "partitionByComment": false,
+        "partitionByNewline": false,
+        "newlinesBetween": false,
+        "ignoreCase": true
+    },
+    "sortPackageJson": { "sortScripts": false },
+    "ignorePatterns": [
+        ".agents",
+        ".emdash",
+        ".wrangler",
+        ".output",
+        "dist",
+        "storage",
+        "uploads",
+        "node_modules",
+        "**/*.md",
+        "**/*.mdx",
+        "**/*.yml",
+        "**/*.yaml",
+        "**/*.toml",
+        "/public/**"
+    ]
+}

@@ -1,0 +1,44 @@
+/*
+  theme.css -- your theme overrides. This is the file to edit to
+  retheme the site.
+
+  Every design token lives in src/styles/tokens.css (colors, type
+  scale, spacing, layout) with its default value. Override any of them
+  here: declarations in this file are unlayered, so they always beat
+  the @layer base defaults in tokens.css.
+
+  Colors are defined with light-dark(). Overriding with a plain color
+  changes light and dark mode at once; use light-dark(<light>, <dark>)
+  to set different values per mode.
+
+  Webfonts are loaded in astro.config.mjs: Inter on --font-body (text and
+  headings, via --font-heading) and Instrument Serif on --font-display
+  (serif headlines: hero, page titles, wordmark). Swap the loaded fonts
+  there; use overrides here for system fonts or a separate face.
+
+  Example:
+
+  :root {
+    --color-brand: light-dark(#0f766e, #2dd4bf);
+    --font-body: "Avenir Next", system-ui, sans-serif;
+    --font-size-4xl: 4rem;
+  }
+*/
+
+:root {
+  /* EmDash LiveSearch dropdown, mapped to the site palette */
+  --emdash-search-bg: var(--color-surface);
+  --emdash-search-text: var(--color-text);
+  --emdash-search-muted: var(--color-muted);
+  --emdash-search-border: var(--color-border);
+  --emdash-search-hover: var(--color-sunken);
+  --emdash-search-highlight: var(--color-text);
+}
+
+/* Image grab deterrence: kill native drag-out and text selection on
+   every image so drag-to-desktop and long-press saves do nothing. */
+img {
+  -webkit-user-drag: none;
+  -webkit-touch-callout: none;
+  user-select: none;
+}

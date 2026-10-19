@@ -1,0 +1,49 @@
+{
+    "$schema": "./node_modules/oxlint/configuration_schema.json",
+    "plugins": ["typescript", "unicorn", "import", "eslint", "oxc"],
+    "options": {
+        "typeAware": true,
+        "typeCheck": true
+    },
+    "env": {
+        "browser": true,
+        "builtin": true,
+        "node": true
+    },
+    "categories": {
+        "correctness": "error",
+        "suspicious": "error"
+    },
+    "rules": {
+        "import/default": "warn",
+        "import/no-absolute-path": "allow",
+        "import/no-cycle": "warn",
+        "import/no-unassigned-import": "off",
+        "no-console": "off",
+        "no-debugger": "warn",
+        "no-empty": ["error", { "allowEmptyCatch": true }],
+        "no-unused-vars": ["error", { "args": "after-used" }],
+        "sort-imports": "off",
+        "typescript/consistent-type-definitions": ["error", "interface"],
+        "typescript/no-explicit-any": "error",
+        "typescript/no-floating-promises": "error",
+        "typescript/no-misused-promises": "error",
+        "typescript/no-unnecessary-type-constraint": "off",
+        "typescript/triple-slash-reference": "allow"
+    },
+    "ignorePatterns": [
+        ".agents",
+        ".emdash",
+        ".wrangler",
+        ".output",
+        "dist",
+        "storage",
+        "uploads",
+        "**/*.md",
+        "**/*.mdx",
+        "**/*.yml",
+        "**/*.yaml",
+        "**/*.toml",
+        "/public/**"
+    ]
+}

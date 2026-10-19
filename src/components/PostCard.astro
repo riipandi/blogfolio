@@ -1,0 +1,272 @@
+---
+import type { ContentEntry } from 'emdash'
+import { Image } from 'emdash/ui'
+import type { Post } from '../../emdash-env'
+
+interface Props {
+  post: ContentEntry<Post>
+  tags?: Array<{ slug: string; label: string }>
+  class?: string
+}
+
+const { post, tags = [], class: className } = Astro.props
+const category = post.data.terms?.category?.[0] ?? null
+
+const formatDate = (date: unknown) => {
+  if (!(date instanceof Date)) return null
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+const date = formatDate(post.data.publishedAt)
+---
+
+<article class:list={['post-card', className]}>
+  <a href={`/posts/${post.id}`} class="post-card-media" {...(post.edit?.featured_image ?? {})}>
+    {post.data.featured_image ? (
+      <div class="media-frame">
+        <Image image={post.data.featured_image} />
+      </div>
+    ) : (
+      <div class="media-frame media-frame--empty">
+        <div class="media-placeholder" data-initial={post.data.title?.charAt(0) ?? ''}>
+          <span class="media-placeholder-label" aria-hidden="true">
+            Text
+          </span>
+        </div>
+      </div>
+    )}
+  </a>
+  <div class="post-card-body">
+    <div class="post-card-meta">
+      {date}
+      {category && (
+        <>
+          {' · '}
+          <a class="post-card-cat" href={`/category/${category.slug}`}>
+            {category.label}
+          </a>
+        </>
+      )}
+    </div>
+    <h2 class="post-card-title" {...(post.edit?.title ?? {})}>
+      <a href={`/posts/${post.id}`}>{post.data.title}</a>
+    </h2>
+    {post.data.excerpt && (
+      <p class="post-card-excerpt" {...(post.edit?.excerpt ?? {})}>
+        {post.data.excerpt}
+      </p>
+    )}
+    {tags.length > 0 && (
+      <div class="post-card-tags">
+        {tags.slice(0, 3).map((t) => (
+          <a class="post-tag" href={`/tag/${t.slug}`}>
+            {t.label}
+          </a>
+        ))}
+        {tags.length > 3 && (
+          <button
+            type="button"
+            class="post-tag post-tag-more"
+            x-data
+            @click={`$store.terms.show()`}
+            aria-label={`Show all ${tags.length} tags and categories`}
+          >
+            +{tags.length - 3}
+          </button>
+        )}
+      </div>
+    )}
+  </div>
+</article>
+
+<style>
+  .post-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+    min-width: 0;
+  }
+
+  .post-card-media {
+    display: block;
+    min-width: 0;
+  }
+
+  /* Media sizing is controlled by the page through CSS variables, so
+     rows of mixed widths can share one media height. */
+  .media-frame {
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    aspect-ratio: var(--post-media-ar, 3 / 2);
+    height: var(--post-media-h, auto);
+  }
+
+  .media-frame--empty {
+    background: var(--color-sunken);
+  }
+
+  /* Image-less posts get a composed placeholder, pure CSS: sunken
+     field, film grain, a faint diagonal weave, corner crop marks,
+     and the title's initial in a hairline ring over a "Text" label. */
+  .media-placeholder {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .media-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+      repeating-linear-gradient(
+        -45deg,
+        color-mix(in oklab, var(--color-border) 40%, transparent) 0 1px,
+        transparent 1px 16px
+      ),
+      radial-gradient(
+        120% 120% at 50% 45%,
+        transparent 45%,
+        color-mix(in oklab, var(--color-border) 45%, transparent) 100%
+      );
+  }
+
+  /* Corner crop marks, like a plate in a printed book. */
+  .media-placeholder::after {
+    content: attr(data-initial);
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(5rem, 9vw, 7.5rem);
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in oklab, var(--color-border-strong) 70%, transparent);
+    border-radius: var(--radius-full);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: var(--font-weight-display);
+    font-size: clamp(2rem, 3.5vw, 3.25rem);
+    line-height: 1;
+    color: color-mix(in oklab, var(--color-text) 65%, transparent);
+    user-select: none;
+  }
+
+  .media-placeholder-label {
+    position: absolute;
+    bottom: clamp(1rem, 2.5vw, 1.75rem);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    color: color-mix(in oklab, var(--color-muted) 75%, transparent);
+  }
+
+  :global(.media-frame img) {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 400ms var(--ease-out);
+  }
+
+  .post-card:hover :global(.media-frame img) {
+    transform: scale(1.03);
+  }
+
+  @media (hover: none) {
+    :global(.media-frame img) {
+      transition: none;
+    }
+  }
+
+  .post-card-body {
+    min-width: 0;
+  }
+
+  .post-card-meta {
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .post-card-cat {
+    color: inherit;
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .post-card-cat:hover {
+    color: var(--color-text);
+  }
+
+  .post-card-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-heading);
+    line-height: var(--leading-snug);
+  }
+
+  .post-card-title a {
+    color: var(--color-text);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .post-card-title a:hover {
+    color: var(--color-muted);
+  }
+
+  .post-card-excerpt {
+    margin-top: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    line-height: var(--leading-normal);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Compact tag pills: quieter and smaller so they sit below the
+     excerpt without competing with it. */
+  .post-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-xs);
+    margin-top: var(--spacing-sm);
+  }
+
+  .post-tag {
+    font-size: 0.6875rem;
+    letter-spacing: var(--tracking-wide);
+    color: var(--color-muted);
+    padding: 0.2em 0.6em;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    text-decoration: none;
+    transition:
+      color var(--transition-base),
+      border-color var(--transition-base);
+  }
+
+  .post-tag:hover {
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+  }
+
+  .post-tag-more {
+    display: inline-block;
+    background: transparent;
+    cursor: pointer;
+    border-style: dashed;
+  }
+</style>

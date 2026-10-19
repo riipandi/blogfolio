@@ -1,0 +1,507 @@
+---
+import { Icon } from 'astro-iconset/components'
+import { decodeSlug, getEmDashCollection, getEmDashEntry, getSeoMeta } from 'emdash'
+import { Image, PortableText } from 'emdash/ui'
+import Base from '#/layouts/Base.astro'
+
+const slug = decodeSlug(Astro.params.slug)
+
+if (!slug) {
+  return Astro.rewrite('/404')
+}
+
+const {
+  entry: project,
+  error,
+  cacheHint: projectCacheHint
+} = await getEmDashEntry('projects', slug)
+
+if (error) return new Response('Could not load the project', { status: 500 })
+if (!project) {
+  return Astro.rewrite('/404')
+}
+
+// Related projects: order by date in the DB and request a small lookahead
+// so we can drop the current entry without re-querying. The lookahead is
+// one larger than the three slots the "More Work" grid needs.
+const relatedResult = await getEmDashCollection('projects', {
+  orderBy: { published_at: 'desc' },
+  limit: 4
+})
+if (relatedResult.error) {
+  return new Response('Could not load related projects', { status: 500 })
+}
+const { entries: relatedProjects, cacheHint: relatedCacheHint } = relatedResult
+const otherProjects = relatedProjects.filter((p) => p.id !== project.id).slice(0, 3)
+if (Astro.cache?.enabled) {
+  Astro.cache.set(projectCacheHint)
+  Astro.cache.set(relatedCacheHint)
+}
+
+const gallery = project.data.gallery
+
+function safeExternalUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined
+  try {
+    const url = new URL(value)
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.href : undefined
+  } catch {
+    return undefined
+  }
+}
+
+const projectUrl = safeExternalUrl(project.data.url)
+const seo = getSeoMeta(project, {
+  siteUrl: Astro.url.origin,
+  path: `/work/${slug}`,
+  defaultDescription: project.data.summary,
+  defaultOgImage: project.data.featured_image?.src
+})
+---
+
+<Base
+  title={seo.title}
+  pageTitle={seo.ogTitle}
+  description={seo.description}
+  image={seo.ogImage}
+  canonical={seo.canonical}
+  robots={seo.robots}
+  type="article"
+  content={{ collection: 'projects', id: project.data.id, slug }}
+>
+  <article class="project">
+    <div class="project-hero">
+      <header class="project-header">
+        <div class="project-meta rise">
+          {project.data.client && (
+            <span class="project-client" {...project.edit.client}>
+              {project.data.client}
+            </span>
+          )}
+          {project.data.client && project.data.year && <span class="meta-separator">·</span>}
+          {project.data.year && (
+            <span class="project-year" {...project.edit.year}>
+              {project.data.year}
+            </span>
+          )}
+        </div>
+        <h1 class="project-title rise" style="--rise-index: 1" {...project.edit.title}>
+          {project.data.title}
+        </h1>
+        {project.data.summary && (
+          <p class="project-summary rise" style="--rise-index: 2" {...project.edit.summary}>
+            {project.data.summary}
+          </p>
+        )}
+        {projectUrl && (
+          <a
+            href={projectUrl}
+            class="project-link rise"
+            style="--rise-index: 3"
+            target="_blank"
+            rel="noopener noreferrer"
+            {...project.edit.url}
+          >
+            Visit live project
+            <Icon
+              name="keyline-icons:arrow-up-right"
+              class="project-link-icon"
+              aria-hidden="true"
+            />
+          </a>
+        )}
+      </header>
+      {project.data.featured_image && (
+        <div
+          class="featured-image rise settle"
+          style="--rise-index: 3"
+          {...project.edit.featured_image}
+        >
+          <div class="media-frame">
+            <Image image={project.data.featured_image} />
+          </div>
+        </div>
+      )}
+    </div>
+
+    <div class="project-content" {...project.edit.content}>
+      <PortableText value={project.data.content} />
+    </div>
+
+    {gallery && gallery.length > 0 && (
+      <div class="project-gallery" {...project.edit.gallery}>
+        {gallery.map((item) => (
+          <figure class="gallery-item">
+            <div class="media-frame">
+              <Image image={item.image} />
+            </div>
+            {item.caption && <figcaption>{item.caption}</figcaption>}
+          </figure>
+        ))}
+      </div>
+    )}
+  </article>
+
+  {otherProjects.length > 0 && (
+    <section class="more-projects">
+      <div class="more-inner">
+        <div class="section-header">
+          <h2 class="section-title">More Work</h2>
+          <a href="/work" class="section-link">
+            All Work
+          </a>
+        </div>
+        <ul class="more-list">
+          {otherProjects.map((p) => (
+            <li>
+              <a href={`/work/${p.id}`} class="more-item">
+                <div class="more-thumb">
+                  <Image image={p.data.featured_image} />
+                </div>
+                <div class="more-foot">
+                  <span class="more-meta">
+                    {p.data.client}
+                    {p.data.client && p.data.year && (
+                      <span class="meta-sep" aria-hidden="true">
+                        ·
+                      </span>
+                    )}
+                    {p.data.year}
+                  </span>
+                  <span class="more-title-row">
+                    <span class="more-title">{p.data.title}</span>
+                    <Icon
+                      class="more-arrow"
+                      name="keyline-icons:arrow-up-right"
+                      aria-hidden="true"
+                    />
+                  </span>
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )}
+</Base>
+<style>
+  .project {
+    max-width: var(--wide-width);
+    margin: 0 auto;
+    padding: var(--spacing-3xl) var(--spacing-lg) var(--spacing-4xl);
+  }
+
+  /*
+   * Hero: intro text and the featured image sit side by side on
+   * desktop; the body copy below stays in the reading measure.
+   */
+  .project-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: var(--spacing-2xl);
+    margin-bottom: var(--spacing-3xl);
+  }
+
+  .project-header {
+    min-width: 0;
+  }
+
+  .project-meta {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-sm);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .meta-separator {
+    margin: 0 var(--spacing-sm);
+  }
+
+  .project-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-snug);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .project-summary {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-normal);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .project-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .project-link-icon {
+    width: 0.9em;
+    height: 0.9em;
+    transition: transform var(--transition-fast);
+  }
+
+  .project-link:hover .project-link-icon {
+    transform: translate(2px, -2px);
+  }
+
+  /*
+   * The featured image fills its hero column; the media frame holds
+   * the rounded corners and the hover zoom.
+   */
+  .featured-image {
+    min-width: 0;
+  }
+
+  .media-frame {
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+  }
+
+  .media-frame img {
+    display: block;
+    width: 100%;
+    height: auto;
+    transition: transform var(--transition-slow);
+  }
+
+  .featured-image:hover .media-frame img,
+  .gallery-item:hover .media-frame img {
+    transform: scale(1.03);
+  }
+
+  @media (hover: none) {
+    .media-frame img {
+      transition: none;
+    }
+  }
+
+  .project-content {
+    font-size: var(--font-size-base);
+    line-height: var(--leading-relaxed);
+  }
+
+  .project-content :global(p) {
+    margin-bottom: 1.5em;
+  }
+
+  .project-content :global(h2) {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-heading);
+    margin-top: 2.5em;
+    margin-bottom: 0.75em;
+  }
+
+  .project-content :global(h3) {
+    font-family: var(--font-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-heading);
+    margin-top: 2em;
+    margin-bottom: 0.5em;
+  }
+
+  .project-content :global(blockquote) {
+    margin: 2em 0;
+    padding-inline-start: var(--spacing-xl);
+    border-inline-start: 2px solid var(--color-brand);
+    color: var(--color-muted);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: var(--font-size-lg);
+  }
+
+  .project-content :global(ul),
+  .project-content :global(ol) {
+    margin-bottom: 1.5em;
+    padding-inline-start: 1.25em;
+  }
+
+  .project-content :global(li) {
+    margin-bottom: 0.5em;
+  }
+
+  .project-content :global(img) {
+    margin: 2em 0;
+    border-radius: var(--radius-lg);
+  }
+
+  .project-gallery {
+    margin-top: var(--spacing-3xl);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg);
+  }
+
+  .gallery-item img {
+    width: 100%;
+    height: auto;
+  }
+
+  .gallery-item:only-child {
+    grid-column: 1 / -1;
+  }
+
+  .gallery-item figcaption {
+    margin-top: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+  }
+
+  .more-projects {
+    border-top: 1px solid var(--color-border);
+    padding: var(--spacing-3xl) 0 var(--spacing-4xl);
+    margin-top: var(--spacing-3xl);
+  }
+
+  .more-inner {
+    max-width: var(--wide-width);
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg);
+  }
+
+  /* Section header: quiet by design — small title, no second
+     hairline (the section already opens with one). */
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .section-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-heading);
+  }
+
+  .section-link {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .section-link:hover {
+    color: var(--color-text);
+  }
+
+  /* Three compact cards per row (one on mobile): a wide still on
+     top, text beneath — the row reads as a filmstrip, filling the
+     container without dead space. */
+  .more-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--spacing-2xl);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .more-item {
+    display: grid;
+    gap: var(--spacing-sm);
+    text-decoration: none;
+  }
+
+  /* Caption block: quiet meta line, then the title with its arrow
+     locked to the title's own line — never floating mid-caption. */
+  .more-foot {
+    display: grid;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+
+  .more-title-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    min-width: 0;
+  }
+
+  .more-thumb {
+    overflow: hidden;
+    border-radius: var(--radius);
+  }
+
+  .more-thumb :global(img) {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    object-fit: cover;
+    display: block;
+    transition: transform var(--transition-slow);
+  }
+
+  .more-meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .meta-sep {
+    margin-inline: 0.45em;
+    color: var(--color-border-strong);
+  }
+
+  .more-title {
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-heading);
+    line-height: var(--leading-snug);
+    color: var(--color-text);
+    transition: color var(--transition-fast);
+  }
+
+  .more-arrow {
+    width: 1em;
+    height: 1em;
+    color: var(--color-muted);
+    transition:
+      color var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .more-item:hover .more-title {
+    color: var(--color-muted);
+  }
+
+  .more-item:hover .more-arrow {
+    color: var(--color-text);
+    transform: translate(2px, -2px);
+  }
+
+  .more-item:hover .more-thumb :global(img) {
+    transform: scale(1.04);
+  }
+
+  @media (max-width: 880px) {
+    .more-list {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 880px) {
+    .project-hero {
+      grid-template-columns: 1fr;
+      gap: var(--spacing-xl);
+      align-items: start;
+    }
+
+    .project-gallery {
+      grid-template-columns: 1fr;
+    }
+
+    .more-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+le>

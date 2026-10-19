@@ -1,0 +1,282 @@
+---
+import { getTaxonomyTermsWithCacheHint } from 'emdash'
+
+// Terms are fetched once here; any trigger on any page just opens the
+// shared dialog through the Alpine store ($store.terms.show()).
+const categoriesResult = await getTaxonomyTermsWithCacheHint('category', {
+  includeCounts: true
+})
+const tagsResult = await getTaxonomyTermsWithCacheHint('tag', {
+  includeCounts: true
+})
+const categories = categoriesResult.data.filter((t) => (t.count ?? 0) > 0)
+const tags = tagsResult.data.filter((t) => (t.count ?? 0) > 0)
+
+if (Astro.cache?.enabled) {
+  Astro.cache.set(categoriesResult.cacheHint)
+  Astro.cache.set(tagsResult.cacheHint)
+}
+---
+
+<template id="terms-dialog-root">
+  <div
+    x-data
+    x-show="$store.terms.open"
+    x-cloak
+    x-transition.opacity.duration.200ms
+    class="terms-dialog"
+    x-effect="document.body.style.overflow = $store.terms.open ? 'hidden' : ''"
+  >
+    <button
+      class="terms-dialog-backdrop"
+      aria-label="Close dialog"
+      @click="$store.terms.close()"
+    ></button>
+    <div
+      class="terms-dialog-panel"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="terms-dialog-title"
+      @keydown.escape.window="$store.terms.close()"
+    >
+      <header class="terms-dialog-head">
+        <div class="terms-dialog-heading">
+          <p class="terms-dialog-eyebrow">Browse</p>
+          <h2 class="terms-dialog-title" id="terms-dialog-title">
+            Categories &amp; tags
+          </h2>
+        </div>
+        <button class="terms-dialog-close" aria-label="Close" @click="$store.terms.close()">
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+          >
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </button>
+      </header>
+
+      <div class="terms-dialog-body">
+        {categories.length > 0 && (
+          <section class="terms-dialog-section">
+            <p class="terms-dialog-label">
+              Categories
+              <span class="terms-dialog-label-count">{categories.length}</span>
+            </p>
+            <div class="terms-dialog-chips">
+              {categories.map((t) => (
+                <a class="term-chip" href={`/category/${t.slug}`} @click="$store.terms.close()">
+                  {t.label}
+                  <span class="term-chip-count">{t.count}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {tags.length > 0 && (
+          <section class="terms-dialog-section">
+            <p class="terms-dialog-label">
+              Tags
+              <span class="terms-dialog-label-count">{tags.length}</span>
+            </p>
+            <div class="terms-dialog-chips">
+              {tags.map((t) => (
+                <a class="term-chip" href={`/tag/${t.slug}`} @click="$store.terms.close()">
+                  {t.label}
+                  <span class="term-chip-count">{t.count}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+      </div>
+
+      <p class="terms-dialog-foot">Select a term to open its archive.</p>
+    </div>
+  </div>
+</template>
+
+<style>
+  .terms-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: grid;
+    place-items: center;
+    padding: var(--spacing-lg);
+  }
+
+  .terms-dialog-backdrop {
+    position: absolute;
+    inset: 0;
+    display: block;
+    width: 100%;
+    border: 0;
+    padding: 0;
+    cursor: default;
+    background: rgb(10 10 10 / 0.44);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+  }
+
+  .terms-dialog-panel {
+    position: relative;
+    width: min(600px, 100%);
+    max-height: min(80vh, 640px);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-glass);
+    animation: terms-panel-in 240ms var(--ease-out);
+  }
+
+  @keyframes terms-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.98);
+    }
+  }
+
+  .terms-dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--spacing-lg);
+    padding: var(--spacing-xl) var(--spacing-xl) var(--spacing-lg);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .terms-dialog-heading {
+    display: grid;
+    gap: var(--spacing-xs);
+  }
+
+  .terms-dialog-eyebrow {
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .terms-dialog-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-snug);
+  }
+
+  .terms-dialog-close {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: calc(-0.25rem);
+    color: var(--color-muted);
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition:
+      color var(--transition-fast),
+      border-color var(--transition-fast);
+  }
+
+  .terms-dialog-close svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .terms-dialog-close:hover {
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+  }
+
+  .terms-dialog-body {
+    display: grid;
+    gap: var(--spacing-sm);
+    padding: 14px var(--spacing-xl) var(--spacing-sm);
+  }
+
+  .terms-dialog-section {
+    display: grid;
+    gap: var(--spacing-md);
+    padding-block: var(--spacing-sm);
+  }
+
+  .terms-dialog-label {
+    display: flex;
+    align-items: baseline;
+    gap: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .terms-dialog-label-count {
+    font-size: 0.6875rem;
+    letter-spacing: 0;
+  }
+
+  .terms-dialog-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
+
+  .term-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.5em;
+    padding: 0.45em 0.9em;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition:
+      color var(--transition-fast),
+      border-color var(--transition-fast);
+  }
+
+  .term-chip:hover {
+    color: var(--color-text);
+    border-color: var(--color-text);
+  }
+
+  /* Count is a quiet trailing number — no hairline, the dialog
+     already has its structural lines. */
+  .term-chip-count {
+    color: var(--color-muted);
+    font-size: 0.6875rem;
+    line-height: 1.2;
+    opacity: 0.75;
+  }
+
+  .terms-dialog-foot {
+    padding: var(--spacing-sm) var(--spacing-xl) var(--spacing-lg);
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+  }
+</style>
+
+<style is:global>
+  [x-cloak] {
+    display: none !important;
+  }
+</style>
+
+<script>
+  // Alpine is loaded and started by @astrojs/alpinejs (see
+  // astro.config.mjs and src/alpine.ts, which registers the `terms`
+  // store and mounts this dialog's template before init).
+</script>

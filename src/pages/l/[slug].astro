@@ -1,0 +1,271 @@
+---
+/**
+ * Short-link resolver for the "links" collection (urlPattern /l/{slug}).
+ *
+ * Behaviour:
+ * - unknown slug or broken target → /404 (rewrite, nothing rendered)
+ * - disabled link → custom notice page ("no longer available")
+ * - expired link → custom notice page ("expired"), showing the expiry date
+ * - password-protected link accepts ?password= (case-insensitive) directly, or
+ *   renders a password prompt page when it is missing/incorrect
+ * - any UTM fields set on the entry are appended to the target URL
+ * - 302 (temporary) so analytics and link edits take effect immediately
+ *
+ * The password prompt submits back to the same URL via GET, so the resolved
+ * password ends up in the query string — same contract as the ?password=
+ * shortcut, just with a friendlier entry point.
+ */
+export const prerender = false
+
+import { getEmDashEntry } from 'emdash'
+import Base from '#/layouts/Base.astro'
+import { trackLinkClick } from '#/utils/link-clicks'
+
+const slug = Astro.params.slug ?? ''
+if (!slug) return Astro.rewrite('/404')
+
+const { entry: link } = await getEmDashEntry('links', slug)
+
+const data = (link?.data ?? {}) as {
+  id?: string
+  title?: string
+  long_url?: string
+  enable?: boolean
+  expiry?: unknown
+  password?: string
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_term?: string
+  utm_content?: string
+}
+
+// Unknown slug or broken target → standard 404.
+if (!link || !data.long_url) return Astro.rewrite('/404')
+
+const expiresAt = data.expiry ? new Date(String(data.expiry)) : null
+const expired =
+  expiresAt !== null && !Number.isNaN(expiresAt.getTime()) && expiresAt.getTime() < Date.now()
+const disabled = data.enable === false
+
+let unavailable: { title: string; intro: string } | null = null
+if (expired) {
+  unavailable = {
+    title: 'This link has expired',
+    intro: expiresAt
+      ? `It stopped working on ${new Intl.DateTimeFormat('en', {
+          dateStyle: 'medium',
+          timeStyle: 'short'
+        }).format(expiresAt)}. Ask the sender for a fresh link if you still need access.`
+      : 'It is no longer active. Ask the sender for a fresh link if you still need access.'
+  }
+} else if (disabled) {
+  unavailable = {
+    title: 'This link is no longer available',
+    intro:
+      'The owner has turned it off. If you were expecting something here, check with the sender.'
+  }
+}
+
+const UTM_KEYS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'] as const
+
+// Preserve every query param except the password itself when the form
+// submits back to this page (e.g. UTM params carried in the shared link).
+const passthrough = [...Astro.url.searchParams.entries()]
+  .filter(([key]) => key !== 'password')
+  .map(([key, value]) => ({ key, value }))
+
+let gate = false
+let gateIncorrect = false
+if (!unavailable && data.password) {
+  const provided = Astro.url.searchParams.get('password') ?? ''
+  if (provided.toLowerCase() !== data.password.toLowerCase()) {
+    gate = true
+    gateIncorrect = provided !== ''
+  }
+}
+
+if (!gate && !unavailable) {
+  const target = new URL(data.long_url)
+  for (const key of UTM_KEYS) {
+    const value = data[key]
+    if (value) target.searchParams.set(key, value)
+  }
+  if (data.id) trackLinkClick(data.id)
+  return Astro.redirect(target.toString(), 302)
+}
+---
+
+{gate && (
+  <Base title={gateIncorrect ? 'Wrong password' : 'Protected link'}>
+    <section class="link-card">
+      <p class="link-eyebrow">Protected link</p>
+      <h1 class="link-title">{data.title || 'This link is protected'}</h1>
+      <p class="link-intro">
+        {gateIncorrect
+          ? "That password didn't match. Try again."
+          : 'Enter the password you were given to continue.'}
+      </p>
+
+      <form class="link-form" method="get" action={Astro.url.pathname}>
+        {passthrough.map(({ key, value }) => (
+          <input type="hidden" name={key} value={value} />
+        ))}
+        <label class="link-label" for="link-password">
+          Password
+        </label>
+        <input
+          class:list={['link-input', { 'link-input-error': gateIncorrect }]}
+          id="link-password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          minlength={6}
+          maxlength={24}
+          autofocus
+          required
+        />
+        {gateIncorrect && (
+          <p class="link-error" role="alert">
+            Incorrect password.
+          </p>
+        )}
+        <button class="link-button" type="submit">
+          Continue
+        </button>
+      </form>
+    </section>
+  </Base>
+)}
+
+{unavailable && (
+  <Base title={unavailable.title}>
+    <section class="link-card">
+      <p class="link-eyebrow">Link unavailable</p>
+      <h1 class="link-title">{unavailable.title}</h1>
+      <p class="link-intro">{unavailable.intro}</p>
+      <a class="link-button link-button-secondary" href="/">
+        Go home
+      </a>
+    </section>
+  </Base>
+)}
+
+<style>
+  .link-card {
+    box-sizing: border-box;
+    max-width: 36rem;
+    margin: var(--spacing-5xl) auto var(--spacing-4xl);
+    padding: var(--spacing-3xl) var(--spacing-3xl);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .link-eyebrow {
+    margin-bottom: var(--spacing-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .link-title {
+    margin-bottom: var(--spacing-sm);
+    font-family: var(--font-heading);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-heading);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-snug);
+  }
+
+  .link-intro {
+    margin-bottom: var(--spacing-xl);
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+    line-height: var(--leading-normal);
+  }
+
+  .link-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    max-width: 100%;
+  }
+
+  .link-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+  }
+
+  .link-input {
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-base);
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition: border-color var(--transition-fast);
+  }
+
+  .link-input:focus-visible {
+    outline: none;
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 1px var(--color-brand-ring);
+  }
+
+  .link-input-error {
+    border-color: var(--color-danger);
+  }
+
+  .link-error {
+    font-size: var(--font-size-sm);
+    color: var(--color-danger);
+  }
+
+  .link-button {
+    display: inline-block;
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    font-size: var(--font-size-sm);
+    text-align: center;
+    color: var(--color-bg);
+    background: var(--color-text);
+    text-decoration: none;
+    border: none;
+    border-radius: var(--radius);
+    cursor: pointer;
+    transition:
+      background var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .link-button:hover {
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    transform: translateY(-1px);
+  }
+
+  .link-button-secondary {
+    color: var(--color-text);
+    background: transparent;
+    border: 1px solid var(--color-border);
+  }
+
+  .link-button-secondary:hover {
+    background: transparent;
+    color: var(--color-text);
+    border-color: var(--color-text);
+  }
+
+  @media (max-width: 480px) {
+    .link-card {
+      margin: var(--spacing-3xl) var(--spacing-md) var(--spacing-2xl);
+      padding: var(--spacing-2xl);
+    }
+
+    .link-button {
+      width: 100%;
+    }
+  }
+</style>

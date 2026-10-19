@@ -1,0 +1,678 @@
+---
+import { Icon } from 'astro-iconset/components'
+import {
+  getEmDashCollection,
+  getTermsForEntries,
+  getSiteSettings,
+  getTaxonomyTermsWithCacheHint
+} from 'emdash'
+import { Image } from 'emdash/ui'
+import PostCard from '#/components/PostCard.astro'
+import Base from '#/layouts/Base.astro'
+import { planBentoRows } from '#/utils/bento'
+import { resolveStarterSiteIdentity } from '#/utils/site-identity'
+
+const cursor = Astro.url.searchParams.get('cursor') || undefined
+
+const {
+  entries: posts,
+  cacheHint,
+  nextCursor
+} = await getEmDashCollection('posts', {
+  orderBy: { published_at: 'desc' },
+  limit: 6,
+  cursor
+})
+
+const { siteTitle, siteTagline } = resolveStarterSiteIdentity(await getSiteSettings())
+
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint)
+
+// Single batched query for tags across every post, instead of calling
+// getEntryTerms() per post (which would be N round-trips).
+const tagsByEntry = await getTermsForEntries(
+  'posts',
+  posts.map((p) => p.data.id),
+  'tag'
+)
+const postsWithTags = posts.map((post) => ({
+  post,
+  tags: tagsByEntry.get(post.data.id) ?? []
+}))
+
+// Taxonomy terms for the browse row in the page header.
+const categoriesResult = await getTaxonomyTermsWithCacheHint('category', {
+  includeCounts: true
+})
+const tagsResult = await getTaxonomyTermsWithCacheHint('tag', {
+  includeCounts: true
+})
+const categories = categoriesResult.data.filter((t) => (t.count ?? 0) > 0)
+const allTags = tagsResult.data.filter((t) => (t.count ?? 0) > 0)
+
+// Keep the browse row calm on wide term lists; overflow goes to the
+// shared terms dialog.
+const visibleCategories = categories.slice(0, 4)
+const visibleTags = allTags.slice(0, 4)
+const hiddenCategoryCount = Math.max(0, categories.length - 4)
+const hiddenTagCount = Math.max(0, allTags.length - 6)
+if (Astro.cache?.enabled) {
+  Astro.cache.set(categoriesResult.cacheHint)
+  Astro.cache.set(tagsResult.cacheHint)
+}
+
+const formatDate = (date: unknown) => {
+  if (!(date instanceof Date)) return null
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const [first, ...rest] = postsWithTags
+const restPosts = cursor ? postsWithTags : rest
+const firstDate = first ? formatDate(first.post.data.publishedAt) : null
+const firstLabel = first
+  ? [firstDate, first.post.data.terms?.category?.[0]?.label].filter(Boolean).join(' · ')
+  : ''
+
+const bentoRows = planBentoRows(restPosts)
+---
+
+<Base title={`Posts — ${siteTitle}`} description={siteTagline}>
+  <header class="posts-hero">
+    <div class="posts-inner rise">
+      <div class="posts-heading">
+        <p class="posts-eyebrow rise">Writing &amp; notes</p>
+        <h1 class="posts-title rise" style="--rise-index: 1">
+          Posts
+        </h1>
+      </div>
+      {(categories.length > 0 || allTags.length > 0) && (
+        <nav
+          class="posts-terms rise"
+          style="--rise-index: 2"
+          aria-label="Browse by category or tag"
+        >
+          {categories.length > 0 && (
+            <div class="posts-terms-group">
+              {visibleCategories.map((t) => (
+                <a class="term-chip" href={`/category/${t.slug}`}>
+                  {t.label}
+                </a>
+              ))}
+              {hiddenCategoryCount > 0 && (
+                <button
+                  type="button"
+                  class="term-chip term-more"
+                  x-data
+                  @click={`$store.terms.show()`}
+                  aria-label="Show all categories and tags"
+                >
+                  +{hiddenCategoryCount}
+                </button>
+              )}
+            </div>
+          )}
+          {allTags.length > 0 && (
+            <div class="posts-terms-group posts-terms-group--quiet">
+              {visibleTags.map((t, i) => (
+                <>
+                  {i > 0 && (
+                    <span class="term-sep" aria-hidden="true">
+                      /
+                    </span>
+                  )}
+                  <a class="term-link" href={`/tag/${t.slug}`}>
+                    {t.label}
+                  </a>
+                </>
+              ))}
+              <span class="term-sep" aria-hidden="true">
+                /
+              </span>
+              <button
+                type="button"
+                class="term-link term-more"
+                @click={`$store.terms.show()`}
+                aria-label="Show all categories and tags"
+                x-data
+              >
+                {hiddenTagCount > 0 ? `+${hiddenTagCount} more` : 'More'}
+              </button>
+            </div>
+          )}
+        </nav>
+      )}
+    </div>
+  </header>
+
+  <section class="posts-list">
+    <div class="posts-inner">
+      {postsWithTags.length === 0 ? (
+        <div class="empty-state">
+          <p>Nothing published yet.</p>
+        </div>
+      ) : (
+        <div class="posts-grid">
+          {!cursor && first && (
+            <a
+              href={`/posts/${first.post.id}`}
+              class:list={[
+                'post-featured',
+                'rise',
+                !first.post.data.featured_image && 'post-featured--no-media'
+              ]}
+              style="--rise-index: 3"
+            >
+              <div class="post-featured-media" {...first.post.edit.featured_image}>
+                {first.post.data.featured_image ? (
+                  <div class="media-frame media-frame--wide">
+                    <Image image={first.post.data.featured_image} />
+                  </div>
+                ) : (
+                  <div class="media-frame media-frame--wide media-frame--empty">
+                    <div
+                      class="media-placeholder"
+                      data-initial={first.post.data.title?.charAt(0) ?? ''}
+                    >
+                      <span class="media-placeholder-label" aria-hidden="true">
+                        Text
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div class="post-featured-overlay">
+                {firstLabel && <p class="post-featured-meta">{firstLabel}</p>}
+                <h2 class="post-featured-title" {...first.post.edit.title}>
+                  {first.post.data.title}
+                </h2>
+                {first.post.data.excerpt && (
+                  <p class="post-featured-excerpt" {...first.post.edit.excerpt}>
+                    {first.post.data.excerpt}
+                  </p>
+                )}
+              </div>
+            </a>
+          )}
+
+          {bentoRows.map((row, rowIdx) => (
+            <div
+              class:list={[
+                'bento-row',
+                'rise',
+                row.kind === 'wide' && 'bento-row--wide',
+                row.kind === 'wide' && row.flip && 'bento-row--flip'
+              ]}
+              style={`--rise-index: ${Math.min(rowIdx + 3, 7)}`}
+            >
+              {row.posts.map(({ post, tags }, idx) => (
+                <PostCard
+                  post={post}
+                  tags={tags}
+                  class={row.kind === 'wide' && idx === 0 ? 'post-card--wide' : undefined}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {(cursor || nextCursor) && (
+        <nav class="posts-pagination" aria-label="Pagination">
+          {cursor ? (
+            <a href="/posts" class="page-link">
+              <Icon name="keyline-icons:arrow-left" aria-hidden="true" />
+              First page
+            </a>
+          ) : (
+            <span />
+          )}
+          {nextCursor && (
+            <a href={`/posts?cursor=${encodeURIComponent(nextCursor)}`} class="page-link">
+              Next page
+              <Icon name="keyline-icons:arrow-right" aria-hidden="true" />
+            </a>
+          )}
+        </nav>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .posts-inner {
+    max-width: var(--wide-width);
+    margin: 0 auto;
+    padding-inline: var(--spacing-lg);
+  }
+
+  /* Quiet header: the featured post is the real opener of this page. */
+  .posts-hero {
+    padding-block: var(--spacing-2xl) var(--spacing-lg);
+  }
+
+  .posts-hero .posts-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--spacing-md) var(--spacing-2xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .posts-eyebrow {
+    margin-bottom: var(--spacing-xs);
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .posts-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-snug);
+  }
+
+  /* Browse row sits at the title's baseline on the right. Categories
+     are chips (echoing the work-index filters), tags quieter inline
+     links behind a vertical hairline. */
+  .posts-terms {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-sm) var(--spacing-lg);
+    /* Optical baseline: lift the chips row so its text sits on the
+  	   serif title's baseline instead of its descender line. */
+    margin-bottom: 0.4em;
+  }
+
+  .posts-terms-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--spacing-sm);
+  }
+
+  .posts-terms-group--quiet {
+    gap: var(--spacing-xs);
+    padding-block: var(--spacing-xs);
+    padding-left: var(--spacing-md);
+    border-left: 1px solid var(--color-border);
+  }
+
+  .term-chip {
+    display: inline-block;
+    padding: 0.35em 0.85em;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition:
+      color var(--transition-fast),
+      border-color var(--transition-fast);
+  }
+
+  .term-chip:hover {
+    color: var(--color-text);
+    border-color: var(--color-text);
+  }
+
+  .term-link {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .term-link:hover {
+    color: var(--color-text);
+  }
+
+  .term-sep {
+    font-size: var(--font-size-sm);
+    color: var(--color-border-strong);
+  }
+
+  /* Dialog triggers: same face as their neighbours, dashed border or
+     underline to signal "there is more". Button resets are scoped so
+     the trigger matches the surrounding links exactly. */
+  .term-more {
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+  }
+
+  button.term-link {
+    border: 0;
+    padding: 0;
+    text-decoration: none;
+  }
+
+  button.term-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .term-chip.term-more {
+    border-style: dashed;
+  }
+
+  .posts-list {
+    padding-block: 0 var(--spacing-4xl);
+  }
+
+  /*
+   * Bento rows are planned in the frontmatter: each row is either
+   * "plain" (three cards) or "wide" (one 2/3-wide card + one normal
+   * card), so every row fills its grid exactly — no holes, and the
+   * featured post stays the only full-width element on the page.
+   */
+  .posts-grid {
+    display: grid;
+    gap: var(--spacing-3xl) var(--spacing-2xl);
+  }
+
+  .bento-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-3xl) var(--spacing-2xl);
+    align-items: start;
+  }
+
+  /* Wide rows share one media height so wide and narrow cards sit
+     level with each other; 24vw keeps it proportional on big screens.
+     The component reads these variables for its media frame. */
+  .bento-row--wide {
+    --post-media-h: clamp(240px, 24vw, 340px);
+    --post-media-ar: auto;
+  }
+
+  .bento-row > :global(.post-card--wide) {
+    grid-column: span 2;
+  }
+
+  /*
+   * Alternate rows mirror the composition by reordering with `order`,
+   * not by explicit grid lines — an explicit column on the wide card
+   * advances the auto-placement cursor past the normal card, pushing
+   * the normal card to the next row and leaving the first cell empty
+   * (the hole seen on paginated pages). `order` participates in the
+   * auto-placement sequence, so both cards stay on the same row.
+   */
+  .bento-row--wide.bento-row--flip > :global(.post-card--wide) {
+    order: 2;
+  }
+
+  /*
+   * Featured post: one wide image with the title and post info set
+   * directly on top of it. Without a photo the media area falls back
+   * to a sunken placeholder and the overlay reads in ink instead.
+   */
+  .post-featured {
+    grid-column: 1 / -1;
+    position: relative;
+    display: block;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    text-decoration: none;
+  }
+
+  .media-frame {
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+  }
+
+  .media-frame--wide {
+    aspect-ratio: 21 / 9;
+  }
+
+  .media-frame--empty {
+    background: var(--color-sunken);
+  }
+
+  /* Same composed placeholder as the post cards: grain, weave,
+     vignette, initial ring, and a "Text" label — pure CSS. */
+  .media-placeholder {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    isolation: isolate;
+    overflow: hidden;
+  }
+
+  .media-placeholder::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-image:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E"),
+      repeating-linear-gradient(
+        -45deg,
+        color-mix(in oklab, var(--color-border) 40%, transparent) 0 1px,
+        transparent 1px 16px
+      ),
+      radial-gradient(
+        120% 120% at 50% 45%,
+        transparent 45%,
+        color-mix(in oklab, var(--color-border) 45%, transparent) 100%
+      );
+  }
+
+  .media-placeholder::after {
+    content: attr(data-initial);
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: clamp(5rem, 9vw, 7.5rem);
+    aspect-ratio: 1;
+    border: 1px solid color-mix(in oklab, var(--color-border-strong) 70%, transparent);
+    border-radius: var(--radius-full);
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: var(--font-weight-display);
+    font-size: clamp(2rem, 3.5vw, 3.25rem);
+    line-height: 1;
+    color: color-mix(in oklab, var(--color-text) 65%, transparent);
+    user-select: none;
+  }
+
+  .media-placeholder-label {
+    position: absolute;
+    bottom: clamp(1rem, 2.5vw, 1.75rem);
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+    color: color-mix(in oklab, var(--color-muted) 75%, transparent);
+  }
+
+  .post-featured-overlay {
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    isolation: isolate;
+    overflow: hidden;
+    display: grid;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-2xl) var(--spacing-3xl);
+    max-width: 72ch;
+    color: white;
+    /* Round the top-right corner so the scrim curve echoes the
+  	   featured image's rounded corners. */
+    border-top-right-radius: var(--radius-lg);
+  }
+
+  /*
+   * The scrim lives on its own pseudo layer so hover only animates
+   * opacity and blur — gradients themselves cannot interpolate, which
+   * is why the old background swap snapped instead of fading.
+   */
+  .post-featured-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(to top, rgb(10 10 10 / 0.88), rgb(10 10 10 / 0.2) 85%);
+    -webkit-backdrop-filter: blur(0.1px);
+    backdrop-filter: blur(0.1px);
+    opacity: 0.82;
+    transition:
+      opacity var(--transition-slow),
+      -webkit-backdrop-filter var(--transition-slow),
+      backdrop-filter var(--transition-slow);
+  }
+
+  /* Soft backdrop on hover: scrim deepens and a gentle blur sits right
+     behind the text block, keeping the title readable over busy photos. */
+  .post-featured:hover .post-featured-overlay::before {
+    opacity: 1;
+    -webkit-backdrop-filter: blur(2px) saturate(1.1);
+    backdrop-filter: blur(2px) saturate(1.1);
+  }
+
+  .post-featured--no-media .post-featured-overlay {
+    color: var(--color-text);
+  }
+
+  .post-featured--no-media .post-featured-overlay::before {
+    display: none;
+  }
+
+  .post-featured:not(.post-featured--no-media) .post-featured-meta {
+    color: rgb(255 255 255 / 0.72);
+  }
+
+  .post-featured--no-media .post-featured-meta {
+    color: var(--color-muted);
+  }
+
+  .post-featured-meta {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .post-featured-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-h2);
+    font-weight: var(--font-weight-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-snug);
+  }
+
+  .post-featured-excerpt {
+    font-size: var(--font-size-sm);
+    line-height: var(--leading-normal);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .post-featured:hover :global(.media-frame img) {
+    transform: scale(1.03);
+  }
+
+  .post-featured:hover :global(.media-frame img) {
+    transition: transform var(--transition-slow);
+  }
+
+  @media (hover: none) {
+    :global(.post-featured .media-frame img) {
+      transition: none;
+    }
+  }
+
+  .posts-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-3xl);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color var(--transition-base);
+  }
+
+  .page-link svg {
+    width: 1em;
+    height: 1em;
+  }
+
+  .page-link:hover {
+    color: var(--color-text);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: var(--spacing-4xl) var(--spacing-lg);
+    color: var(--color-muted);
+  }
+
+  @media (max-width: 880px) {
+    .media-frame--wide {
+      aspect-ratio: 16 / 9;
+    }
+
+    .post-featured-overlay {
+      padding: var(--spacing-xl);
+    }
+
+    /* Stack the header: title first, browse row wraps below it.
+  	   The vertical separators between groups read as noise at
+  	   this width, so they disappear. */
+    .posts-hero .posts-inner {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+
+    .posts-terms {
+      justify-content: flex-start;
+      margin-bottom: 0;
+    }
+
+    .posts-terms-group--quiet {
+      border-left: 0;
+      padding-left: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .bento-row {
+      grid-template-columns: 1fr;
+    }
+
+    /* Single column: wide cards stack like every other card. */
+    .bento-row > :global(.post-card--wide) {
+      grid-column: auto;
+    }
+
+    .bento-row--wide {
+      --post-media-h: auto;
+      --post-media-ar: 3 / 2;
+    }
+
+    .post-featured-title {
+      font-size: var(--font-size-2xl);
+    }
+  }
+</style>

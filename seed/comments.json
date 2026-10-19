@@ -1,0 +1,75 @@
+{
+    "$comment": "Sample comments for posts. Applied by scripts/seed-comments.mjs after `emdash seed` — the emdash seed format has no native comment support, so these live in their own file.",
+    "comments": [
+        {
+            "post": "photography-for-designers",
+            "items": [
+                {
+                    "name": "Mara Ellingsen",
+                    "email": "mara@ellingsen.no",
+                    "date": "2026-09-14T09:20:00.000Z",
+                    "body": "The bit about letting one photograph carry the whole spread finally gave me permission to cut three images I had been defending for weeks. Thank you for putting words to that instinct."
+                },
+                {
+                    "name": "Rafael Ocampo",
+                    "email": "rafael@ocampo.studio",
+                    "date": "2026-09-15T14:05:00.000Z",
+                    "body": "Curious how you handle horizontal panoramas here — they never seem to earn their width in a two-column grid.",
+                    "replies": [
+                        {
+                            "name": "Hermion Laurent",
+                            "email": "hella@example.com",
+                            "date": "2026-09-15T18:40:00.000Z",
+                            "body": "Usually I crop them to 21:9 and give them the full row, like the featured treatment on the index. A panorama that has to share a column is a panorama that has already lost."
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "post": "designing-with-restraint",
+            "items": [
+                {
+                    "name": "June Park",
+                    "email": "june@parkworks.kr",
+                    "date": "2026-08-02T11:30:00.000Z",
+                    "body": "\"Restraint is not the absence of ideas, it is the presence of judgment.\" Putting this above my desk."
+                },
+                {
+                    "name": "Tomas Verner",
+                    "email": "tomas@verner.cz",
+                    "date": "2026-08-03T08:15:00.000Z",
+                    "body": "We shipped a client site last month after deleting almost half of what we had designed. It tested better than any version before it. This piece describes exactly why."
+                }
+            ]
+        },
+        {
+            "post": "the-case-for-quiet-interfaces",
+            "items": [
+                {
+                    "name": "Priya Raghavan",
+                    "email": "priya@raghavan.design",
+                    "date": "2026-07-11T16:45:00.000Z",
+                    "body": "The comparison to a well-lit reading room is the best argument for calm software I have read. Screens can be rooms too."
+                },
+                {
+                    "name": "Daniel Okafor",
+                    "email": "daniel@okafor.ng",
+                    "date": "2026-07-12T10:10:00.000Z",
+                    "body": "Quiet does not mean lifeless, and this piece gets that distinction right. Motion should feel like someone breathing, not someone tapping the glass."
+                }
+            ]
+        },
+        {
+            "post": "welcome",
+            "items": [
+                {
+                    "name": "Lina Fischer",
+                    "email": "lina@fischer.at",
+                    "date": "2026-01-20T13:00:00.000Z",
+                    "body": "Subscribed. Looking forward to notes on process rather than another feed of polished end results."
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,28 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "extends": "astro/tsconfigs/strict",
+    "compilerOptions": {
+        "allowSyntheticDefaultImports": true,
+        "composite": false,
+        "erasableSyntaxOnly": false,
+        "exactOptionalPropertyTypes": false,
+        "inlineSourceMap": true,
+        "lib": ["ESNext", "DOM", "DOM.Iterable"],
+        "moduleDetection": "force",
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": false,
+        "noUncheckedIndexedAccess": true,
+        "noUncheckedSideEffectImports": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "strict": true,
+        "strictPropertyInitialization": true,
+        "useDefineForClassFields": true,
+        "paths": {
+            "#/*": ["./src/*"]
+        }
+    },
+    "include": [".astro/types.d.ts", "**/*"],
+    "exclude": ["dist", ".emdash", "storage", "uploads"]
+}

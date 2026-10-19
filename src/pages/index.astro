@@ -1,0 +1,177 @@
+---
+import { getEmDashCollection, getSiteSettings } from 'emdash'
+import ProjectCard from '#/components/ProjectCard.astro'
+import RecentWriting from '#/components/RecentWriting.astro'
+import SectionHeader from '#/components/SectionHeader.astro'
+import Base from '#/layouts/Base.astro'
+
+// Fetch settings + the 4 featured projects in parallel. Limiting and
+// sorting in the database avoids loading every project just to slice
+// off the first 4 in JS (a full-table read on sites with lots of work).
+const [settings, projectsResult, postsResult] = await Promise.all([
+  getSiteSettings(),
+  getEmDashCollection('projects', {
+    orderBy: { published_at: 'desc' },
+    limit: 4
+  }),
+  getEmDashCollection('posts', {
+    orderBy: { published_at: 'desc' },
+    limit: 3
+  })
+])
+if (projectsResult.error) {
+  return new Response('Could not load the portfolio', { status: 500 })
+}
+const { entries: featuredProjects, cacheHint } = projectsResult
+if (Astro.cache?.enabled) Astro.cache.set(cacheHint)
+const recentPosts = postsResult.entries
+---
+
+<Base>
+  <section class="hero">
+    <h1 class="hero-title rise">{settings?.title || 'Blogfolio'}</h1>
+    <p class="hero-tagline rise" style="--rise-index: 1">
+      {settings?.tagline || 'Design & Development'}
+    </p>
+  </section>
+
+  {featuredProjects.length > 0 ? (
+    <section class="featured">
+      <SectionHeader
+        title="Selected Work"
+        href="/work"
+        linkLabel="View all projects →"
+        class="rise"
+        style="--rise-index: 2"
+      />
+      <div class="projects-grid">
+        {featuredProjects.map((project, index) => (
+          <ProjectCard
+            title={project.data.title}
+            summary={project.data.summary}
+            featuredImage={project.data.featured_image}
+            href={`/work/${project.id}`}
+            client={project.data.client}
+            year={project.data.year}
+            edit={project.edit}
+            class="rise"
+            style={`--rise-index: ${index + 3}`}
+          />
+        ))}
+      </div>
+    </section>
+  ) : (
+    <section class="empty-state">
+      <h2>No projects yet</h2>
+      <p>Add your first project in the admin panel.</p>
+      <a href="/_emdash/admin/content/projects/new" class="btn">
+        Add a project
+      </a>
+    </section>
+  )}
+
+  <RecentWriting posts={recentPosts} />
+</Base>
+
+<style>
+  .hero {
+    max-width: var(--wide-width);
+    margin: 0 auto;
+    padding: var(--spacing-4xl) var(--spacing-lg);
+    text-align: center;
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-display);
+    font-weight: var(--font-weight-display);
+    line-height: var(--leading-tight);
+    margin-bottom: var(--spacing-md);
+    letter-spacing: var(--tracking-tight);
+  }
+
+  .hero-tagline {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    color: var(--color-muted);
+    font-style: italic;
+  }
+
+  .featured {
+    max-width: var(--wide-width);
+    margin: 0 auto;
+    padding: 0 var(--spacing-lg) var(--spacing-4xl);
+  }
+
+  /* Homepage variant of the shared section header: hairline under
+     the title row, breathing room before the grid. */
+  .featured :global(.section-header) {
+    margin-bottom: var(--spacing-2xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--spacing-2xl);
+  }
+
+  @media (max-width: 1024px) {
+    .projects-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: var(--spacing-4xl) var(--spacing-lg);
+    max-width: 400px;
+    margin: 0 auto;
+  }
+
+  .empty-state h2 {
+    font-size: var(--font-size-xl);
+    margin-bottom: var(--spacing-sm);
+  }
+
+  .empty-state p {
+    color: var(--color-muted);
+    margin-bottom: var(--spacing-lg);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--color-text);
+    color: var(--color-bg);
+    text-decoration: none;
+    border-radius: var(--radius);
+    font-size: var(--font-size-sm);
+    transition: opacity var(--transition-fast);
+  }
+
+  .btn:hover {
+    opacity: 0.85;
+  }
+
+  @media (max-width: 768px) {
+    .hero {
+      padding: var(--spacing-3xl) var(--spacing-lg);
+    }
+
+    .hero-title {
+      font-size: var(--font-size-3xl);
+    }
+
+    .projects-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .featured :global(.section-header) {
+      flex-direction: column;
+      gap: var(--spacing-sm);
+      align-items: flex-start;
+    }
+  }
+</style>

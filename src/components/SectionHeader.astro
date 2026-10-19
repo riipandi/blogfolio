@@ -1,0 +1,53 @@
+---
+/**
+ * Shared section header: serif title on the left, quiet "see all"
+ * link on the right. Used by the homepage sections and content-list
+ * components so every section opens with the same furniture.
+ */
+interface Props {
+  title: string
+  href?: string
+  linkLabel?: string
+  class?: string
+  style?: string
+}
+const { title, href, linkLabel, class: className, style } = Astro.props
+---
+
+<div class:list={['section-header', className]} style={style}>
+  <h2 class="section-title">{title}</h2>
+  {href && linkLabel && (
+    <a href={href} class="section-link">
+      {linkLabel}
+    </a>
+  )}
+</div>
+
+<style>
+  .section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--spacing-md);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-display);
+    letter-spacing: var(--tracking-tight);
+    line-height: var(--leading-tight);
+  }
+
+  .section-link {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+    white-space: nowrap;
+  }
+
+  .section-link:hover {
+    color: var(--color-text);
+  }
+</style>

@@ -1,0 +1,67 @@
+{
+    "oxc.disableNestedConfig": true,
+    "oxc.fmt.disableNestedConfig": true,
+    "js/ts.experimental.useTsgo": true,
+    "js/ts.preferences.autoImportFileExcludePatterns": ["vendor/**"],
+    "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.codeActionsOnSave": {
+        "source.fixAll.oxc": "explicit"
+    },
+    "files.associations": {
+        "*.vars": "dotenv",
+        "*.yaml.example": "yaml",
+        "*.yml.example": "yaml",
+        "*.env.example": "dotenv"
+    },
+    "files.exclude": {
+        "**/dist": true
+    },
+    "files.readonlyInclude": {
+        "**/dist/**": true,
+        "**/.emdash/**": true,
+        "emdash-env.d.ts": true
+    },
+    "files.watcherExclude": {
+        "**/dist/**": true,
+        "**/storage/**": true,
+        "**/uploads/**": true,
+        "**/.emdash/**": true
+    },
+    "search.exclude": {
+        "**/dist/**": true,
+        "**/storage/**": true,
+        "**/uploads/**": true,
+        "**/.emdash/**": true,
+        "emdash-env.d.ts": true
+    },
+    "[astro]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[css]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[javascript]": {
+        "editor.inlayHints.enabled": "offUnlessPressed",
+        "editor.defaultFormatter": "oxc.oxc-vscode",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true
+    },
+    "[json]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[jsonc]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[markdown]": {
+        "editor.defaultFormatter": "oxc.oxc-vscode"
+    },
+    "[typescript]": {
+        "editor.inlayHints.enabled": "offUnlessPressed",
+        "editor.defaultFormatter": "oxc.oxc-vscode",
+        "editor.formatOnPaste": true,
+        "editor.formatOnSave": true
+    }
+}

@@ -1,0 +1,321 @@
+---
+export const prerender = false
+
+import { Icon } from 'astro-iconset/components'
+import { getEmDashCollection, getTaxonomyTermsWithCacheHint, getTermsForEntries } from 'emdash'
+import ProjectCard from '#/components/ProjectCard.astro'
+import Base from '#/layouts/Base.astro'
+
+// Get filter from query param. When set, push the filter down to the
+// database via `where` instead of loading every project and filtering
+// in JS — that pattern scales O(projects × terms-per-project) and
+// blows up the moment you have more than a couple of dozen entries.
+const activeTag = Astro.url.searchParams.get('tag')
+const cursor = Astro.url.searchParams.get('cursor') ?? undefined
+
+const [projectsResult, tagsResult] = await Promise.all([
+  getEmDashCollection('projects', {
+    orderBy: { published_at: 'desc' },
+    limit: 12,
+    cursor,
+    // The where key must match the taxonomy name exactly — it is
+    // "project-tag", not "tag" (same trap as "tag" on posts).
+    ...(activeTag ? { where: { 'project-tag': activeTag } } : {})
+  }),
+  getTaxonomyTermsWithCacheHint('project-tag', { includeCounts: false })
+])
+if (projectsResult.error) {
+  return new Response('Could not load the portfolio', { status: 500 })
+}
+
+const { entries: sortedProjects, nextCursor } = projectsResult
+const tags = tagsResult.data
+if (Astro.cache?.enabled) {
+  Astro.cache.set(projectsResult.cacheHint)
+  Astro.cache.set(tagsResult.cacheHint)
+}
+
+// Single batched JOIN for the tag pills shown on each card, instead of
+// one getEntryTerms() round-trip per card.
+const tagsByEntry = await getTermsForEntries(
+  'projects',
+  sortedProjects.map((p) => p.data.id),
+  'project-tag'
+)
+const projectsWithTags = sortedProjects.map((project) => ({
+  project,
+  projectTags: tagsByEntry.get(project.data.id) ?? []
+}))
+
+const activeLabel = tags.find((t) => t.slug === activeTag)?.label
+
+// Page-aware count line, same honesty rules as the search page: the
+// first page can state a real count, continuation pages just say more.
+const countLine = activeTag
+  ? `${projectsWithTags.length} project${projectsWithTags.length === 1 ? '' : 's'} tagged “${activeLabel}”`
+  : cursor
+    ? 'More projects'
+    : `${projectsWithTags.length} project${projectsWithTags.length === 1 ? '' : 's'}`
+
+function workUrl(next: string): string {
+  const params = new URLSearchParams({ cursor: next })
+  if (activeTag) params.set('tag', activeTag)
+  return `/work?${params.toString()}`
+}
+---
+
+<Base
+  title={activeTag ? `${activeLabel || activeTag} — Work` : 'Work'}
+  description="A selection of projects spanning identity, interface design, development, and art direction."
+>
+  <header class="work-hero">
+    <div class="work-inner rise">
+      <div class="work-heading">
+        <p class="work-eyebrow rise">Selected projects</p>
+        <h1 class="work-title rise" style="--rise-index: 1">
+          Work
+        </h1>
+      </div>
+      {tags.length > 0 && (
+        <nav class="work-tags rise" style="--rise-index: 2" aria-label="Filter by tag">
+          {tags.map((tag) => (
+            <a
+              href={`/work?tag=${tag.slug}`}
+              class:list={['term-chip', { active: activeTag === tag.slug }]}
+              aria-current={activeTag === tag.slug ? 'page' : undefined}
+            >
+              {tag.label}
+            </a>
+          ))}
+          {activeTag && (
+            <a href="/work" class="term-chip term-clear" aria-label="Clear filter">
+              <Icon name="keyline-icons:x" aria-hidden="true" />
+              Clear
+            </a>
+          )}
+        </nav>
+      )}
+    </div>
+  </header>
+
+  <section class="work-body">
+    <div class="work-inner">
+      <p class="work-count rise" style="--rise-index: 3">
+        {countLine}
+      </p>
+
+      {projectsWithTags.length > 0 ? (
+        <div class="projects-grid">
+          {projectsWithTags.map(({ project, projectTags }, index) => (
+            <ProjectCard
+              title={project.data.title}
+              summary={project.data.summary}
+              featuredImage={project.data.featured_image}
+              href={`/work/${project.id}`}
+              client={project.data.client}
+              year={project.data.year}
+              tags={projectTags.map((t) => t.label)}
+              edit={project.edit}
+              class="rise"
+              style={`--rise-index: ${Math.min(index + 4, 8)}`}
+            />
+          ))}
+        </div>
+      ) : (
+        <div class="empty-state">
+          <p>
+            {activeTag ? 'Nothing with this tag yet. Browse' : 'No projects yet. Start from'}{' '}
+            <a href="/work">all work</a>
+            {activeTag ? ' instead.' : ' or add one in the admin panel.'}
+          </p>
+        </div>
+      )}
+
+      {(cursor || nextCursor) && (
+        <nav class="work-pagination" aria-label="Pagination">
+          {cursor ? (
+            <a href={activeTag ? `/work?tag=${activeTag}` : '/work'} class="page-link">
+              <Icon name="keyline-icons:arrow-left" aria-hidden="true" />
+              First page
+            </a>
+          ) : (
+            <span />
+          )}
+          {nextCursor && (
+            <a href={workUrl(nextCursor)} rel="next" class="page-link">
+              More projects
+              <Icon name="keyline-icons:arrow-right" aria-hidden="true" />
+            </a>
+          )}
+        </nav>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  .work-inner {
+    max-width: var(--wide-width);
+    margin: 0 auto;
+    padding-inline: var(--spacing-lg);
+  }
+
+  /* Hero: eyebrow + serif title left, tag chips riding the title's
+     baseline on the right — the same composition as the posts index. */
+  .work-hero {
+    padding-block: var(--spacing-2xl) 0;
+  }
+
+  .work-hero .work-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--spacing-md) var(--spacing-2xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .work-heading {
+    display: grid;
+    gap: var(--spacing-xs);
+  }
+
+  .work-eyebrow {
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .work-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-snug);
+  }
+
+  .work-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--spacing-sm);
+    margin-bottom: 0.4em;
+  }
+
+  /* Chip language shared with the posts-index term chips. */
+  .term-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    padding: 0.45em 0.9em;
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    transition:
+      color var(--transition-fast),
+      border-color var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .term-chip :global(svg) {
+    width: 0.9em;
+    height: 0.9em;
+  }
+
+  .term-chip:hover {
+    color: var(--color-text);
+    border-color: var(--color-text);
+  }
+
+  .term-chip.active {
+    color: var(--color-bg);
+    background: var(--color-text);
+    border-color: var(--color-text);
+  }
+
+  .term-clear:hover {
+    color: var(--color-text);
+    background: var(--color-sunken);
+    border-color: var(--color-border);
+  }
+
+  .work-body {
+    padding-block: var(--spacing-lg) var(--spacing-4xl);
+  }
+
+  .work-count {
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-2xl);
+    margin-top: var(--spacing-lg);
+  }
+
+  .empty-state {
+    margin-top: var(--spacing-lg);
+    padding: var(--spacing-xl);
+    background: var(--color-sunken);
+    border-radius: var(--radius-lg);
+    color: var(--color-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .empty-state a {
+    color: var(--color-text);
+    text-underline-offset: 3px;
+  }
+
+  /* Same furniture as the posts-index pagination. */
+  .work-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-3xl);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color var(--transition-base);
+  }
+
+  .page-link :global(svg) {
+    width: 1em;
+    height: 1em;
+  }
+
+  .page-link:hover {
+    color: var(--color-text);
+  }
+
+  @media (max-width: 880px) {
+    .work-hero .work-inner {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+
+    .work-tags {
+      justify-content: flex-start;
+      margin-bottom: 0;
+    }
+
+    .projects-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

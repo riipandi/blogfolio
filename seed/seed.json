@@ -1,0 +1,1472 @@
+{
+    "$schema": "https://emdashcms.com/seed.schema.json",
+    "defaultLocale": "en",
+    "version": "1",
+    "meta": {
+        "name": "Blogfolio Starter",
+        "description": "A portfolio for showcasing creative work with blog posts",
+        "author": "Aris Ripandi"
+    },
+    "settings": {
+        "title": "Blogfolio",
+        "tagline": "My personal portfolio",
+        "seo": { "titleSeparator": "—" }
+    },
+    "collections": [
+        {
+            "slug": "projects",
+            "label": "Projects",
+            "labelSingular": "Project",
+            "supports": ["drafts", "revisions", "preview", "search", "seo"],
+            "urlPattern": "/work/{slug}",
+            "fields": [
+                {
+                    "slug": "title",
+                    "label": "Title",
+                    "type": "string",
+                    "required": true,
+                    "searchable": true
+                },
+                {
+                    "slug": "featured_image",
+                    "label": "Featured Image",
+                    "type": "image",
+                    "required": true
+                },
+                {
+                    "slug": "client",
+                    "label": "Client",
+                    "type": "string"
+                },
+                {
+                    "slug": "year",
+                    "label": "Year",
+                    "type": "string"
+                },
+                {
+                    "slug": "summary",
+                    "label": "Summary",
+                    "type": "text",
+                    "searchable": true
+                },
+                {
+                    "slug": "content",
+                    "label": "Content",
+                    "type": "portableText",
+                    "searchable": true
+                },
+                {
+                    "slug": "gallery",
+                    "label": "Gallery",
+                    "type": "repeater",
+                    "validation": {
+                        "maxItems": 24,
+                        "subFields": [
+                            {
+                                "slug": "image",
+                                "label": "Image",
+                                "type": "image",
+                                "required": true
+                            },
+                            {
+                                "slug": "caption",
+                                "label": "Caption",
+                                "type": "text"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "slug": "url",
+                    "label": "Project URL",
+                    "type": "url"
+                }
+            ]
+        },
+        {
+            "slug": "pages",
+            "label": "Pages",
+            "labelSingular": "Page",
+            "supports": ["drafts", "revisions", "preview", "search", "seo"],
+            "urlPattern": "/{slug}",
+            "fields": [
+                {
+                    "slug": "title",
+                    "label": "Title",
+                    "type": "string",
+                    "required": true,
+                    "searchable": true
+                },
+                {
+                    "slug": "content",
+                    "label": "Content",
+                    "type": "portableText",
+                    "searchable": true
+                }
+            ]
+        },
+        {
+            "slug": "posts",
+            "label": "Posts",
+            "labelSingular": "Post",
+            "commentsEnabled": false,
+            "urlPattern": "/posts/{slug}",
+            "supports": ["drafts", "revisions", "preview", "scheduling", "search", "seo"],
+            "fields": [
+                {
+                    "slug": "title",
+                    "label": "Title",
+                    "type": "string",
+                    "required": true,
+                    "searchable": true
+                },
+                {
+                    "slug": "featured_image",
+                    "label": "Featured Image",
+                    "type": "image"
+                },
+                {
+                    "slug": "content",
+                    "label": "Content",
+                    "type": "portableText",
+                    "searchable": true
+                },
+                {
+                    "slug": "excerpt",
+                    "label": "Excerpt",
+                    "type": "text"
+                }
+            ]
+        },
+        {
+            "slug": "links",
+            "label": "Links",
+            "labelSingular": "Link",
+            "urlPattern": "/l/{slug}",
+            "description": "URL shortener",
+            "supports": ["drafts", "revisions"],
+            "editLocking": true,
+            "routable": true,
+            "fields": [
+                {
+                    "slug": "long_url",
+                    "label": "Long URL",
+                    "type": "url",
+                    "required": true,
+                    "searchable": true
+                },
+                {
+                    "slug": "title",
+                    "label": "Title",
+                    "type": "string",
+                    "searchable": true
+                },
+                {
+                    "slug": "utm_source",
+                    "label": "UTM Source",
+                    "type": "string"
+                },
+                {
+                    "slug": "utm_medium",
+                    "label": "UTM Medium",
+                    "type": "string"
+                },
+                {
+                    "slug": "utm_campaign",
+                    "label": "UTM Campaign",
+                    "type": "string"
+                },
+                {
+                    "slug": "utm_term",
+                    "label": "UTM Term",
+                    "type": "string"
+                },
+                {
+                    "slug": "utm_content",
+                    "label": "UTM Content",
+                    "type": "string"
+                },
+                {
+                    "slug": "password",
+                    "label": "Password",
+                    "type": "string",
+                    "validation": {
+                        "minLength": 6,
+                        "maxLength": 24,
+                        "pattern": "^\\S{8,24}$"
+                    }
+                },
+                {
+                    "slug": "expiry",
+                    "label": "Expiry",
+                    "type": "datetime",
+                    "indexed": true
+                },
+                {
+                    "slug": "clicks",
+                    "label": "Clicks",
+                    "type": "integer",
+                    "translatable": false,
+                    "defaultValue": 0
+                }
+            ]
+        }
+    ],
+    "taxonomies": [
+        {
+            "name": "project-tag",
+            "label": "Project Tags",
+            "labelSingular": "Project Tag",
+            "hierarchical": false,
+            "collections": ["projects"],
+            "terms": [
+                {
+                    "slug": "identity",
+                    "label": "Identity"
+                },
+                {
+                    "slug": "ui-ux",
+                    "label": "UI/UX"
+                },
+                {
+                    "slug": "development",
+                    "label": "Development"
+                },
+                {
+                    "slug": "art-direction",
+                    "label": "Art Direction"
+                },
+                {
+                    "slug": "packaging",
+                    "label": "Packaging"
+                },
+                {
+                    "slug": "ecommerce",
+                    "label": "E-commerce"
+                },
+                {
+                    "slug": "editorial",
+                    "label": "Editorial"
+                }
+            ]
+        },
+        {
+            "name": "category",
+            "label": "Categories",
+            "labelSingular": "Category",
+            "hierarchical": true,
+            "collections": ["posts"],
+            "terms": [
+                { "slug": "general", "label": "General" },
+                { "slug": "updates", "label": "Updates" },
+                { "slug": "process", "label": "Process" }
+            ]
+        },
+        {
+            "name": "tag",
+            "label": "Tags",
+            "labelSingular": "Tag",
+            "hierarchical": false,
+            "collections": ["posts"],
+            "terms": [
+                {
+                    "slug": "starter",
+                    "label": "Starter"
+                },
+                {
+                    "slug": "example",
+                    "label": "Example"
+                },
+                {
+                    "slug": "process",
+                    "label": "Process"
+                },
+                {
+                    "slug": "typography",
+                    "label": "Typography"
+                },
+                {
+                    "slug": "tools",
+                    "label": "Tools"
+                },
+                {
+                    "slug": "inspiration",
+                    "label": "Inspiration"
+                }
+            ]
+        }
+    ],
+    "menus": [
+        {
+            "name": "primary",
+            "label": "Primary Navigation",
+            "items": [
+                { "type": "custom", "label": "Home", "url": "/" },
+                { "type": "custom", "label": "Posts", "url": "/posts" },
+                { "type": "custom", "label": "Work", "url": "/work" },
+                { "type": "custom", "label": "About", "url": "/about" },
+                { "type": "custom", "label": "Contact", "url": "/contact" }
+            ]
+        },
+        {
+            "name": "footer_explore",
+            "label": "Explore",
+            "items": [
+                { "type": "custom", "label": "Work", "url": "/work" },
+                { "type": "custom", "label": "Posts", "url": "/posts" },
+                { "type": "custom", "label": "About", "url": "/about" },
+                { "type": "custom", "label": "Contact", "url": "/contact" }
+            ]
+        },
+        {
+            "name": "footer_connect",
+            "label": "Connect",
+            "items": [
+                { "type": "custom", "label": "Email", "url": "mailto:hello@example.com" },
+                {
+                    "type": "custom",
+                    "label": "GitHub",
+                    "url": "https://github.com/riipandi",
+                    "target": "_blank"
+                },
+                { "type": "custom", "label": "RSS", "url": "/rss.xml" }
+            ]
+        }
+    ],
+    "bylines": [
+        {
+            "id": "bl_000001",
+            "slug": "aris",
+            "displayName": "Aris Ripandi",
+            "bio": "Just ordinary person",
+            "websiteUrl": "https://ripandis.com",
+            "isGuest": false
+        }
+    ],
+    "widgetAreas": [
+        {
+            "name": "sidebar",
+            "label": "Sidebar",
+            "description": "Sidebar widget area",
+            "widgets": [
+                {
+                    "type": "component",
+                    "componentId": "core:search",
+                    "title": "Search"
+                },
+                {
+                    "type": "component",
+                    "componentId": "core:categories",
+                    "title": "Categories"
+                },
+                {
+                    "type": "component",
+                    "componentId": "core:recent-posts",
+                    "title": "Recent Posts",
+                    "props": {
+                        "count": 5
+                    }
+                }
+            ]
+        }
+    ],
+    "content": {
+        "pages": [
+            {
+                "id": "about",
+                "slug": "about",
+                "status": "published",
+                "data": {
+                    "title": "About",
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "We are a small design studio focused on creating meaningful work for thoughtful clients. Founded in 2020, we've had the privilege of working with brands across technology, culture, and the arts.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Our approach is simple: listen carefully, think deeply, and craft with intention. We believe that good design is invisible — it gets out of the way and lets the work speak for itself.",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "What we do",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "We specialize in brand identity, web design, and art direction. Whether you need a complete visual identity or a single website, we bring the same level of care and attention to every project.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        }
+                    ]
+                }
+            }
+        ],
+        "projects": [
+            {
+                "id": "meridian-brand",
+                "slug": "meridian-brand",
+                "status": "published",
+                "data": {
+                    "title": "Meridian",
+                    "client": "Meridian Collective",
+                    "year": "2024",
+                    "summary": "A complete brand identity for a creative collective bringing together artists and technologists.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=1200&h=900&fit=crop",
+                            "alt": "Meridian cover image",
+                            "filename": "photo-1558618666-fcd25c85cd64.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Meridian Collective needed a visual identity that could bridge the gap between traditional art and emerging technology. The challenge was to create something that felt timeless yet forward-looking.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The approach",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "We developed a wordmark that combines classical typography with subtle geometric forms. The color palette draws from both digital interfaces and natural materials, creating a bridge between worlds.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The result",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The new identity has been applied across print and digital touchpoints, from business cards to a fully responsive website. Meridian has received positive feedback from both artists and technologists alike.",
+                                    "_key": "k9"
+                                }
+                            ],
+                            "_key": "k8"
+                        }
+                    ],
+                    "gallery": [
+                        {
+                            "image": {
+                                "$media": {
+                                    "url": "https://images.unsplash.com/photo-1523726491678-bf852e717f6a?w=1200&h=900&fit=crop",
+                                    "alt": "Brand identity sketches and colour studies arranged on a desk",
+                                    "filename": "meridian-process.jpg"
+                                }
+                            },
+                            "caption": "Early identity studies for Meridian Collective."
+                        },
+                        {
+                            "image": {
+                                "$media": {
+                                    "url": "https://images.unsplash.com/photo-1558655146-d09347e92766?w=1200&h=900&fit=crop",
+                                    "alt": "Meridian website layouts displayed on a designer's monitor",
+                                    "filename": "meridian-digital.jpg"
+                                }
+                            },
+                            "caption": "The identity applied to Meridian's digital experience."
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "project-tag": ["identity", "art-direction"]
+                }
+            },
+            {
+                "id": "volta-web",
+                "slug": "volta-web",
+                "status": "published",
+                "data": {
+                    "title": "Volta",
+                    "client": "Volta Energy",
+                    "year": "2024",
+                    "summary": "Website design for a renewable energy startup making clean power accessible to everyone.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=900&fit=crop",
+                            "alt": "Volta cover image",
+                            "filename": "photo-1497366216548-37526070297c.jpg"
+                        }
+                    },
+                    "url": "https://volta.example.com",
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Volta is on a mission to make renewable energy accessible to everyone. They needed a website that could explain complex technology simply while inspiring trust in potential customers.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Design principles",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "We focused on clarity and warmth. The design uses generous whitespace and a vibrant green accent that evokes growth and sustainability without feeling clichéd.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "project-tag": ["ui-ux", "development"]
+                }
+            },
+            {
+                "id": "archive-print",
+                "slug": "archive-print",
+                "status": "published",
+                "data": {
+                    "title": "The Archive",
+                    "client": "City Museum",
+                    "year": "2023",
+                    "summary": "Exhibition catalog and print materials for a retrospective on modernist architecture.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=1200&h=900&fit=crop",
+                            "alt": "The Archive cover image",
+                            "filename": "photo-1507003211169-0a1dd7228f2d.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The Archive was a major exhibition at the City Museum, showcasing 50 years of modernist architecture through photographs, drawings, and models. We designed the complete print identity.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The catalog",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The 240-page catalog uses a strict grid system inspired by the work being exhibited. Full-bleed photography alternates with dense text spreads, creating a rhythm that echoes the exhibition layout.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "project-tag": ["editorial", "art-direction"]
+                }
+            },
+            {
+                "id": "coastal-photo",
+                "slug": "coastal-photo",
+                "status": "published",
+                "data": {
+                    "title": "Coastal",
+                    "client": "Personal Project",
+                    "year": "2023",
+                    "summary": "A photographic study of the Pacific coastline, exploring the intersection of land, sea, and sky.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1505142468610-359e7d316be0?w=1200&h=900&fit=crop",
+                            "alt": "Coastal cover image",
+                            "filename": "photo-1505142468610-359e7d316be0.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Coastal began as a weekend project and grew into a year-long exploration of the Pacific shoreline. Shot entirely on medium format film, the series captures the quiet drama of the coast.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Process",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Each image was made at dawn or dusk, when the light is softest and the beaches are empty. The slow process of shooting film encourages patience and intentionality — qualities that show in the final work.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "project-tag": ["art-direction", "editorial"]
+                }
+            }
+        ],
+        "posts": [
+            {
+                "id": "post-1",
+                "slug": "welcome",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-01-12T09:00:00.000Z",
+                    "title": "Welcome",
+                    "excerpt": "Your first post. Replace this with your own content.",
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "This is a starter post. The templates in this project show the basic patterns for querying and rendering EmDash content. Replace them with your own design.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "What to do next",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Open the admin panel to add content, or edit the Astro pages in src/pages to change how content is displayed.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["general"],
+                    "tag": ["starter", "example"]
+                }
+            },
+            {
+                "id": "post-2",
+                "slug": "studio-update-2026",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-06-08T09:00:00.000Z",
+                    "title": "Blogfolio update: a new identity for a new season",
+                    "excerpt": "We refreshed our own identity this quarter — here is what changed and why we kept almost everything.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&h=800&fit=crop",
+                            "alt": "Sunlit studio workspace with two desks",
+                            "filename": "studio-workspace.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Every few years we turn the lens on ourselves. This quarter it was our turn: a refreshed wordmark, a tighter type scale, and a site that finally matches how we actually work.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [{ "_type": "span", "text": "What changed", "_key": "k3" }],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Less, mostly. We dropped two accent colours, merged three type styles into one, and rewrote every page of copy until each sentence earned its place.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "A rebrand that removes things is usually the one that lasts.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The full case study will follow once the last of the collateral ships. Until then, the site you are reading is the release.",
+                                    "_key": "k9"
+                                }
+                            ],
+                            "_key": "k8"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["updates"],
+                    "tag": ["starter", "process"]
+                }
+            },
+            {
+                "id": "post-3",
+                "slug": "designing-with-restraint",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-07-01T09:00:00.000Z",
+                    "title": "Designing with restraint",
+                    "excerpt": "Restraint is not the absence of ideas — it is the discipline to ship only the ones that carry their weight.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1522542550221-31fd19575a2d?w=1200&h=800&fit=crop",
+                            "alt": "Designer sketching interface wireframes at a desk",
+                            "filename": "design-sketching.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Every project starts with more ideas than it can hold. The first week is generous; the rest of the project is editing. By the time something ships, most of what we made is gone — and the work is better for it.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                { "_type": "span", "text": "The one-question test", "_key": "k3" }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "For every element we ask a single question: if we removed this, would anyone miss it? If the answer is no, it goes. Colour, type, motion, copy — everything gets the same test.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Restraint is a series of small deletions, not one big decision.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The result is work that loads fast, reads clearly, and ages well. It is also the hardest kind of work to sell in a kick-off meeting — which is exactly why it is worth writing down.",
+                                    "_key": "k9"
+                                }
+                            ],
+                            "_key": "k8"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["process"],
+                    "tag": ["process", "typography"]
+                }
+            },
+            {
+                "id": "post-4",
+                "slug": "choosing-a-type-pairing",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-07-20T09:00:00.000Z",
+                    "title": "Notes on choosing a type pairing",
+                    "excerpt": "One display face, one workhorse. Everything we have learned about pairing type for editorial sites.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&h=800&fit=crop",
+                            "alt": "Fountain pen resting on handwritten notes",
+                            "filename": "type-notes.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "A type pairing fails for the same reason most design fails: two voices competing for the same sentence. Our rule is simple — one face performs, the other supports, and neither improvises.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Contrast, not competition",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "A high-contrast serif at display sizes against a neutral sans for everything else gives an editorial voice without noise. Instrument Serif with Inter is the pairing on this very site: quiet where it should be, loud where it must be.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "If you can name three reasons a typeface is beautiful, pick the fourth one instead.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Test the pair on real copy — footnotes, captions, error messages — before you commit. Most pairings survive a hero headline; few survive a table of contents.",
+                                    "_key": "k9"
+                                }
+                            ],
+                            "_key": "k8"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["process"],
+                    "tag": ["typography", "inspiration"]
+                }
+            },
+            {
+                "id": "post-5",
+                "slug": "the-tools-we-rely-on",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-08-05T09:00:00.000Z",
+                    "title": "The tools we rely on",
+                    "excerpt": "A short, honest list of the software that survives every project — and the ones we keep quitting.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=1200&h=800&fit=crop",
+                            "alt": "Laptop and sketchbook on a wooden desk",
+                            "filename": "tools-desk.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Our stack has shrunk every year. Figma for design, Astro for the web, EmDash for content, and a plain text editor for everything else. Anything that needs a weekly tutorial does not survive the quarter.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                { "_type": "span", "text": "What we keep quitting", "_key": "k3" }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Project management tools. We have tried all of them, twice. A shared document and a honest weekly call have outperformed every board we ever maintained.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The best tool is the one you stop noticing after a week.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "If you are starting out: pick boring tools, learn them deeply, and spend the saved energy on the work itself.",
+                                    "_key": "k9"
+                                }
+                            ],
+                            "_key": "k8"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["general"],
+                    "tag": ["tools", "process"]
+                }
+            },
+            {
+                "id": "post-6",
+                "slug": "editing-is-the-design",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-08-22T09:00:00.000Z",
+                    "title": "Editing is the design",
+                    "excerpt": "The sentence you cut does more for the layout than any grid ever will.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=1200&h=800&fit=crop",
+                            "alt": "Open notebook and coffee cup beside a laptop",
+                            "filename": "editing-notebook.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "We used to treat copy as content that arrives after design. Years of editorial work taught us the opposite: the length of the paragraph decides the rhythm of the page before a single style is applied.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Write with the layout, not for it",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Cut a sentence and the white space appears on its own. Shorten a heading and the grid finally breathes. Most layouts we are asked to fix are typography problems wearing a layout costume.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Delete the paragraph and watch the design improve — that is the test.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "So now we write first, design second, and the pages are calmer for it. The words were the design all along.",
+                                    "_key": "k9"
+                                }
+                            ],
+                            "_key": "k8"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["general"],
+                    "tag": ["inspiration", "typography"]
+                }
+            },
+            {
+                "id": "post-7",
+                "slug": "designing-in-public",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-09-04T09:00:00.000Z",
+                    "title": "Designing in public",
+                    "excerpt": "Sharing rough work before it is ready feels risky. It is also the fastest feedback loop we have found.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&h=800&fit=crop",
+                            "alt": "Team working together around laptops",
+                            "filename": "designing-public.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Polished work gets polite nods. Rough work gets real comments. Posting early drafts — half-typed case studies, unglamorous sketches — has improved our process more than any workshop.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "The audience is smaller than you fear",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "A handful of thoughtful readers beats a large indifferent one. The notes we get from sharing early are specific, generous, and often come from people doing similar work.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Ship the draft. The draft is where the useful feedback lives.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["updates"],
+                    "tag": ["starter", "inspiration"]
+                }
+            },
+            {
+                "id": "post-8",
+                "slug": "the-case-for-quiet-interfaces",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-09-18T09:00:00.000Z",
+                    "title": "The case for quiet interfaces",
+                    "excerpt": "Interfaces that stop competing for attention are the ones people keep using.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=1200&h=800&fit=crop",
+                            "alt": "Minimal laptop setup with a single window open",
+                            "filename": "quiet-interface.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Loud interfaces win demos and lose mornings. Badges, banners, and motion compete for a budget of attention that was already spent before the page finished loading.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                { "_type": "span", "text": "Hierarchy is kindness", "_key": "k3" }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "A quiet interface is not an empty one — it is an ordered one. One accent, used sparingly; one scale of type; one motion language. The user's eye moves because the layout told it where to go, not because something blinked.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Every element shouting makes the whole page whisper nothing.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["general"],
+                    "tag": ["inspiration", "process"]
+                }
+            },
+            {
+                "id": "post-9",
+                "slug": "photography-for-designers",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-10-02T09:00:00.000Z",
+                    "title": "Photography for designers who claim they cannot shoot",
+                    "excerpt": "You already compose grids and crops all day. The camera is just another viewport.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1522199755839-a2bacb67c546?w=1200&h=800&fit=crop",
+                            "alt": "Camera and notebook on a table by a window",
+                            "filename": "camera-notebook.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Designers already know more about photography than they admit: framing, hierarchy, cropping, the discipline of removing things. The camera is simply another viewport with worse undo.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Three rules that transfer",
+                                    "_key": "k3"
+                                }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "One light source beats three mediocre ones. Get closer than feels comfortable. And let negative space do the talking — the same generosity that makes a layout breathe makes a photograph.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Shoot what you already look at. The eye you trained on layouts does not lie when it finds a scene.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["general"],
+                    "tag": ["tools", "inspiration"]
+                }
+            },
+            {
+                "id": "post-10",
+                "slug": "shipping-small",
+                "status": "published",
+                "data": {
+                    "published_at": "2026-10-16T09:00:00.000Z",
+                    "title": "Shipping small",
+                    "excerpt": "Small releases keep taste in the loop. Big releases only show you what you already broke.",
+                    "featured_image": {
+                        "$media": {
+                            "url": "https://images.unsplash.com/photo-1488190211105-8b0e65b80b4e?w=1200&h=800&fit=crop",
+                            "alt": "Hand writing a checklist in a notebook",
+                            "filename": "shipping-small.jpg"
+                        }
+                    },
+                    "content": [
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "A release the size of a paragraph can be judged by taste. A release the size of a book can only be judged by test coverage. We ship small so that judgement — the human kind — stays in the loop.",
+                                    "_key": "k1"
+                                }
+                            ],
+                            "_key": "k0"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "h2",
+                            "children": [
+                                { "_type": "span", "text": "The compounding part", "_key": "k3" }
+                            ],
+                            "_key": "k2"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "normal",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Small ships compound: each one teaches you something about the next. Big ships only teach you what already broke, months after you could have done anything about it.",
+                                    "_key": "k5"
+                                }
+                            ],
+                            "_key": "k4"
+                        },
+                        {
+                            "_type": "block",
+                            "style": "blockquote",
+                            "children": [
+                                {
+                                    "_type": "span",
+                                    "text": "Momentum is a design material. Ship small enough to keep it.",
+                                    "_key": "k7"
+                                }
+                            ],
+                            "_key": "k6"
+                        }
+                    ]
+                },
+                "taxonomies": {
+                    "category": ["process"],
+                    "tag": ["process", "tools"]
+                }
+            }
+        ],
+        "links": [
+            {
+                "id": "youtube",
+                "slug": "youtube",
+                "status": "published",
+                "data": {
+                    "long_url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ&list=PL2MI040U_GXobmpXtTwBF7oHBGT5BETSD",
+                    "title": "Never Gonna Give You Up — YouTube"
+                }
+            },
+            {
+                "id": "protected",
+                "slug": "protected",
+                "status": "published",
+                "data": {
+                    "long_url": "https://www.youtube.com/watch?v=SGRgAULYgWE&list=PL8cZ4VKxosU4Gg3DYFRDSKa-KjgwimKl-",
+                    "title": "Secret Collections — YouTube",
+                    "password": "123456"
+                }
+            }
+        ]
+    }
+}

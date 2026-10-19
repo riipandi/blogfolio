@@ -1,0 +1,409 @@
+---
+import { Icon } from 'astro-iconset/components'
+/**
+ * Server-rendered search results page. The search widget and the
+ * keyboard shortcut submit here with ?q=; the form re-submits with
+ * plain HTML (no JS required). The pill shares the nav/sidebar
+ * search language; results reuse the quiet "reading list" rows.
+ */
+import { search } from 'emdash'
+import Base from '#/layouts/Base.astro'
+
+const query = (Astro.url.searchParams.get('q') || '').trim()
+const cursor = Astro.url.searchParams.get('cursor') || undefined
+
+// Slugs land in different sections depending on their collection.
+const sectionPath: Record<string, string> = {
+  posts: '/posts',
+  projects: '/work',
+  pages: ''
+}
+const sectionLabel: Record<string, string> = {
+  posts: 'Post',
+  projects: 'Project',
+  pages: 'Page'
+}
+
+let results: Awaited<ReturnType<typeof search>>['items'] = []
+let nextCursor: string | undefined
+if (query) {
+  const found = await search(query, {
+    collections: ['posts', 'projects', 'pages'],
+    status: 'published',
+    limit: 12,
+    cursor
+  })
+  results = found.items
+  nextCursor = found.nextCursor
+}
+
+const hits = results
+  .map((item) => ({
+    ...item,
+    href: `${sectionPath[item.collection] ?? ''}/${item.slug}`.replace(/\/{2,}/g, '/'),
+    label: sectionLabel[item.collection] ?? item.collection
+  }))
+  .filter((item) => item.href !== `/${item.slug}` || item.collection === 'pages')
+---
+
+<Base
+  title={query ? `Search: ${query}` : 'Search'}
+  description="Search across posts, projects, and pages."
+>
+  <header class="archive-hero">
+    <div class="archive-inner">
+      <div class="search-hero-grid">
+        <div class="archive-heading">
+          <h1 class="archive-title">Search</h1>
+        </div>
+        <form class="search-form" action="/search" method="get" role="search">
+          <div class="search-pill">
+            <input
+              class="search-input"
+              type="text"
+              name="q"
+              value={query}
+              placeholder="Search…"
+              autocomplete="off"
+              autofocus
+              aria-label="Search"
+            />
+            <button class="search-submit" type="submit" aria-label="Search">
+              <Icon name="keyline-icons:search" aria-hidden="true" />
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <section class="search-page">
+    <div class="archive-inner">
+      <p class="search-count">
+        {query ? (
+          hits.length > 0 ? (
+            cursor ? (
+              <>More matches for “{query}”</>
+            ) : (
+              <>
+                {hits.length} result{hits.length === 1 ? '' : 's'} for “{query}”
+              </>
+            )
+          ) : (
+            <>
+              No matches for "{query}". Try <a href="/posts">all posts</a> or{' '}
+              <a href="/work">selected work</a>.
+            </>
+          )
+        ) : (
+          <>Type to search across essays, notes, and case studies.</>
+        )}
+      </p>
+      {hits.length > 0 && (
+        <ul class="search-hits">
+          {hits.map((hit) => (
+            <li class="search-row">
+              <a href={hit.href} class="search-row-link">
+                <span class="search-row-title">{hit.title}</span>
+                <span class="search-row-meta">{hit.label}</span>
+                <Icon name="keyline-icons:arrow-up-right" aria-hidden="true" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {query && (cursor || nextCursor) && (
+        <nav class="search-pagination" aria-label="Pagination">
+          {cursor ? (
+            <a href={`/search?q=${encodeURIComponent(query)}`} class="page-link">
+              <Icon name="keyline-icons:arrow-left" aria-hidden="true" />
+              First page
+            </a>
+          ) : (
+            <span />
+          )}
+          {nextCursor && (
+            <a
+              href={`/search?q=${encodeURIComponent(query)}&cursor=${encodeURIComponent(nextCursor)}`}
+              class="page-link"
+            >
+              Next page
+              <Icon name="keyline-icons:arrow-right" aria-hidden="true" />
+            </a>
+          )}
+        </nav>
+      )}
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Shared container — identical geometry to the archive pages. */
+  .archive-inner {
+    max-width: var(--wide-width);
+    margin: 0 auto;
+    padding-inline: var(--spacing-lg);
+  }
+
+  /* Hero block padding matches the archive pages exactly. */
+  .archive-hero {
+    padding-block: var(--spacing-2xl) 0;
+  }
+
+  /* Hero row: heading and count on the left, the search pill riding
+     the title's baseline on the right — one line of furniture, one
+     hairline underneath. */
+  .search-hero-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: var(--spacing-md) var(--spacing-2xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .archive-heading {
+    display: grid;
+    gap: var(--spacing-xs);
+  }
+
+  .archive-eyebrow {
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .archive-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-display);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-snug);
+  }
+
+  .search-count {
+    margin-bottom: var(--spacing-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .search-count a {
+    color: var(--color-text);
+    text-underline-offset: 3px;
+    transition: color var(--transition-fast);
+  }
+
+  .search-count a:hover {
+    color: var(--color-brand);
+  }
+
+  .search-form {
+    width: 26rem;
+    margin-bottom: 0.15em;
+  }
+
+  /* The seamless pill: identical language to the sidebar search. */
+  .search-pill {
+    position: relative;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 0.65em 3.2em 0.65em 1.15em;
+    font-size: var(--font-size-sm);
+    font-family: inherit;
+    color: var(--color-text);
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color var(--transition-fast);
+  }
+
+  /* Belt and braces: kill any native clear affordance. */
+  .search-input::-webkit-search-cancel-button,
+  .search-input::-webkit-search-decoration {
+    -webkit-appearance: none;
+    display: none;
+  }
+
+  .search-input::placeholder {
+    color: var(--color-muted);
+  }
+
+  .search-input:focus {
+    border-color: var(--color-border-strong);
+  }
+
+  .search-submit {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    right: 3px;
+    aspect-ratio: 1;
+    width: auto;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    font-size: 0;
+    color: var(--color-muted);
+    background: transparent;
+    border: 0;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition:
+      color var(--transition-fast),
+      background var(--transition-fast);
+  }
+
+  .search-submit :global(svg) {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .search-submit:hover {
+    color: var(--color-text);
+    background: var(--color-sunken);
+  }
+
+  .search-submit:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: 1px;
+  }
+
+  .search-page {
+    padding-block: var(--spacing-lg) var(--spacing-4xl);
+  }
+
+  /* Result rows: one line each — title carries the match, the
+     collection label reads as a small right-aligned tag before the
+     arrow. Same hairline-row and hover vocabulary as "Keep
+     reading", but sized for a results list instead of a teaser. */
+  .search-hits {
+    margin-top: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .search-row + .search-row {
+    border-top: 1px solid var(--color-border);
+  }
+
+  .search-row-link {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: var(--spacing-sm) var(--spacing-lg);
+    padding-block: var(--spacing-md);
+    text-decoration: none;
+  }
+
+  .search-row-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-heading);
+    line-height: var(--leading-snug);
+    color: var(--color-text);
+    transition: color var(--transition-fast);
+  }
+
+  .search-row-meta {
+    font-size: var(--font-size-xs);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wide);
+  }
+
+  .search-row-link :global(svg) {
+    width: 1.1em;
+    height: 1.1em;
+    color: var(--color-muted);
+    transition:
+      color var(--transition-fast),
+      transform var(--transition-fast);
+  }
+
+  .search-row-link:hover .search-row-title {
+    color: var(--color-muted);
+  }
+
+  .search-row-link:hover :global(svg) {
+    color: var(--color-text);
+    transform: translate(2px, -2px);
+  }
+
+  .search-row-link:focus-visible {
+    outline: 2px solid var(--color-text);
+    outline-offset: -2px;
+    border-radius: var(--radius);
+  }
+
+  /* Same furniture as the posts-index pagination: one hairline, two
+     quiet links pinned to the edges. */
+  .search-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: var(--spacing-2xl);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--color-border);
+  }
+
+  .page-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: var(--font-size-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    transition: color var(--transition-base);
+  }
+
+  .page-link :global(svg) {
+    width: 1em;
+    height: 1em;
+  }
+
+  .page-link:hover {
+    color: var(--color-text);
+  }
+
+  @media (max-width: 640px) {
+    .search-row-meta {
+      display: none;
+    }
+
+    /* Titles wrap onto two lines at this width; the snug leading
+  	   that reads well on desktop gets cramped here, so rows breathe
+  	   with normal leading and a touch more block padding. */
+    .search-row-title {
+      line-height: var(--leading-normal);
+    }
+
+    .search-row-link {
+      padding-block: var(--spacing-lg);
+    }
+
+    .search-count {
+      line-height: var(--leading-normal);
+    }
+  }
+
+  @media (max-width: 880px) {
+    /* Stack: the pill first (it is this page's primary control),
+  	   then the heading. */
+    .search-hero-grid {
+      grid-template-columns: 1fr;
+      align-items: start;
+    }
+
+    .search-form {
+      order: -1;
+      width: 100%;
+    }
+  }
+</style>
