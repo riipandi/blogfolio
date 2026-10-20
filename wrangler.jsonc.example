@@ -1,0 +1,86 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * - https://developers.cloudflare.com/workers/wrangler/configuration
+ * - https://developers.cloudflare.com/workers/runtime-apis/bindings
+ * - https://developers.cloudflare.com/workers/static-assets/binding
+ *
+ * Build configurations:
+ * - Build command: `pnpm run typegen && pnpm run build`
+ * - Deploy command: `pnpm exec wrangler deploy --env production`
+ * - Non-production branch deploy command: `pnpm exec wrangler versions upload`
+ */
+{
+    "$schema": "node_modules/wrangler/config-schema.json",
+    "name": "emdash-website",
+    "compatibility_date": "2026-04-07",
+    "compatibility_flags": ["nodejs_compat"],
+    "main": "./src/worker.ts",
+    "send_metrics": true,
+    "preview_urls": true,
+    "dev": {
+        "host": "127.0.0.1",
+        "port": 4321
+    },
+    "routes": [
+        {
+            "pattern": "example.com",
+            "custom_domain": true,
+            "previews_enabled": true,
+            "enabled": true
+        }
+    ],
+    "placement": {
+        "mode": "smart"
+    },
+    "observability": {
+        "enabled": false,
+        "head_sampling_rate": 0.01,
+        "logs": {
+            "enabled": true,
+            "head_sampling_rate": 0.7
+        }
+    },
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "example-prd"
+        }
+    ],
+    "r2_buckets": [
+        {
+            "binding": "MEDIA",
+            "bucket_name": "example"
+        }
+    ],
+    "cache": { "enabled": true },
+    "send_email": [{ "name": "EMAIL" }],
+    // Sandboxed plugins require Worker Loader, available on
+    // Workers paid plans. Uncomment to enable:
+    // "worker_loaders": [{ "binding": "LOADER" }],
+    "triggers": {
+        "crons": ["* * * * *"]
+    },
+    "vars": {
+        "EMDASH_SITE_URL": "https://example.com",
+        "NODE_VERSION": "24.21.0",
+        "PNPM_VERSION": "12.14.0"
+    },
+    "previews": {
+        "d1_databases": [
+            {
+                "binding": "DB",
+                "database_name": "example-dev"
+            }
+        ],
+        "r2_buckets": [
+            {
+                "binding": "MEDIA",
+                "bucket_name": "example"
+            }
+        ],
+        "vars": {
+            "NODE_VERSION": "24.21.0",
+            "PNPM_VERSION": "12.14.0"
+        }
+    }
+}
